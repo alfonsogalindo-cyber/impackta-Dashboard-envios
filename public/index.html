@@ -318,8 +318,12 @@ function statusOf(p){if(p==null)return{cls:"",label:"Sin dato",tag:"gray"};if(p>
 /* ===== TRANSFORM ===== */
 let MODEL=null;
 function transform(rows){
-  const H=rows[0],dateIdx=[],dates=[];
+  const H=rows[0];let dateIdx=[],dates=[];
   H.forEach((h,i)=>{const m=String(h).trim().match(/^(\d{1,2})\/(\d{1,2})$/);if(m){dateIdx.push(i);dates.push(new Date(YEAR,+m[2]-1,+m[1]))}});
+  // Recortar el eje al ÚLTIMO día con datos reales: el Sheet trae columnas de días futuros aún vacías
+  let lastReal=-1;
+  for(let r=1;r<rows.length;r++){const row=rows[r];for(let j=0;j<dateIdx.length;j++){if(/^-?\d+$/.test((row[dateIdx[j]]||"").trim())&&j>lastReal)lastReal=j}}
+  if(lastReal>=0){dateIdx=dateIdx.slice(0,lastReal+1);dates=dates.slice(0,lastReal+1)}
   const C={cli:findCol(H,["CLIENTE"]),comp:(findCol(H,["COMPROMISO"])>=0?findCol(H,["COMPROMISO"]):findCol(H,["TARIFA"])+1),tar:findCol(H,["TARIFA"]),com:findCol(H,["COMERCIAL"]),pob:findCol(H,["POBLACIÓN","POBLACION"]),integ:findCol(H,["INTEGRACIÓN","INTEGRACION"]),cod:findCol(H,["COD.CLIENTE","COD CLIENTE"])};
   const N=dateIdx.length;
   const weekKeys=dates.map(isoWeek), uWeeks=[...new Set(weekKeys)];
