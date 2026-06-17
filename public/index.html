@@ -320,7 +320,7 @@ let MODEL=null;
 function transform(rows){
   const H=rows[0],dateIdx=[],dates=[];
   H.forEach((h,i)=>{const m=String(h).trim().match(/^(\d{1,2})\/(\d{1,2})$/);if(m){dateIdx.push(i);dates.push(new Date(YEAR,+m[2]-1,+m[1]))}});
-  const C={cli:findCol(H,["CLIENTE"]),comp:findCol(H,["COMPROMISO"]),tar:findCol(H,["TARIFA"]),com:findCol(H,["COMERCIAL"]),pob:findCol(H,["POBLACIÓN","POBLACION"]),integ:findCol(H,["INTEGRACIÓN","INTEGRACION"]),cod:findCol(H,["COD.CLIENTE","COD CLIENTE"])};
+  const C={cli:findCol(H,["CLIENTE"]),comp:(findCol(H,["COMPROMISO"])>=0?findCol(H,["COMPROMISO"]):findCol(H,["TARIFA"])+1),tar:findCol(H,["TARIFA"]),com:findCol(H,["COMERCIAL"]),pob:findCol(H,["POBLACIÓN","POBLACION"]),integ:findCol(H,["INTEGRACIÓN","INTEGRACION"]),cod:findCol(H,["COD.CLIENTE","COD CLIENTE"])};
   const N=dateIdx.length;
   const weekKeys=dates.map(isoWeek), uWeeks=[...new Set(weekKeys)];
   const clients=[];
@@ -331,7 +331,7 @@ function transform(rows){
     const f=nn[0],l=nn[nn.length-1];
     const win=aligned.slice(f,l+1).map(v=>v==null?0:v), winD=dates.slice(f,l+1);
     const total=win.reduce((a,b)=>a+b,0),dias=win.length,conEnvio=win.filter(v=>v>0).length;
-    const cr=(row[C.comp]||"").trim(),comp=/^\d+$/.test(cr)?+cr:null;
+    const cr=(row[C.comp]||"").trim().replace(",",".").replace(/[^\d.]/g,""),comp=(cr!==""&&!isNaN(parseFloat(cr)))?Math.round(parseFloat(cr)):null;
     const mediaDia=dias?total/dias:0,cumpl=comp?Math.round(mediaDia/comp*100):null;
     const deficit=comp!=null?total-comp*dias:null;
     let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
