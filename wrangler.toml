@@ -1,0 +1,13 @@
+name = "impackta-clientes"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Assets estáticos (index.html y cualquier cosa en /public)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# KV para bajas compartidas — el namespace_id se rellena en el paso 3 de la guía
+# [[kv_namespaces]]
+# binding = "BAJAS_KV"
+# id = "PEGA_AQUI_EL_ID_DEL_KV"
