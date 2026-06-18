@@ -331,13 +331,13 @@ function transform(rows){
   for(let r=1;r<rows.length;r++){
     const row=rows[r];if(C.cli<0)break;const name=(row[C.cli]||"").trim();if(!name)continue;
     const aligned=dateIdx.map(i=>{const v=(row[i]||"").trim();return /^-?\d+$/.test(v)?+v:null});
-    const nn=aligned.map((v,i)=>v!=null?i:-1).filter(i=>i>=0);if(!nn.length)continue;
-    const f=nn[0],l=nn[nn.length-1];
-    const win=aligned.slice(f,l+1).map(v=>v==null?0:v), winD=dates.slice(f,l+1);
+    const nn=aligned.map((v,i)=>v!=null?i:-1).filter(i=>i>=0);const hasData=nn.length>0;
+    const f=hasData?nn[0]:0,l=hasData?nn[nn.length-1]:-1;
+    const win=hasData?aligned.slice(f,l+1).map(v=>v==null?0:v):[], winD=hasData?dates.slice(f,l+1):[];
     const total=win.reduce((a,b)=>a+b,0),dias=win.length,conEnvio=win.filter(v=>v>0).length;
     const cr=(row[C.comp]||"").trim().replace(",",".").replace(/[^\d.]/g,""),comp=(cr!==""&&!isNaN(parseFloat(cr)))?Math.round(parseFloat(cr)):null;
-    const mediaDia=dias?total/dias:0,cumpl=comp?Math.round(mediaDia/comp*100):null;
-    const deficit=comp!=null?total-comp*dias:null;
+    const mediaDia=dias?total/dias:0,cumpl=!hasData?null:(comp?Math.round(mediaDia/comp*100):null);
+    const deficit=!hasData?null:(comp!=null?total-comp*dias:null);
     let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
     const wm=new Map();for(let i=0;i<win.length;i++){const k=isoWeek(winD[i]);const e=wm.get(k)||{sum:0,dias:0,date:mondayOf(winD[i])};e.sum+=win[i];e.dias++;wm.set(k,e)}
     const weekly=[...wm.values()];
@@ -350,7 +350,7 @@ function transform(rows){
     const gapEnd=(N-1-l)+(win.length-1-lastShip);
     clients.push({name,comp,cumpl,cod:(row[C.cod]||"").trim(),tarifa:(row[C.tar]||"").trim()||"—",comercial:(row[C.com]||"").trim()||"—",
       poblacion:(row[C.pob]||"").trim(),total,dias,conEnvio,mediaDia:+mediaDia.toFixed(1),mediaSem:+(mediaDia*5).toFixed(1),
-      deficit,racha,tSym,tval,wow,ttc,gapEnd,altaIdx:f,altaDate:dates[f],ramp:win.slice(),weekly,status:statusOf(cumpl)});
+      deficit,racha,tSym,tval,wow,ttc,gapEnd,altaIdx:hasData?f:-1,altaDate:hasData?dates[f]:null,ramp:win.slice(),weekly,status:statusOf(cumpl)});
   }
   return {dates,N,clients,...aggregate(clients,dates)};
 }
@@ -651,7 +651,7 @@ function renderSegmentacion(){
 function renderAltas(){
   const d=fc();
   const inact=d.filter(x=>x.gapEnd>=INACT_DAYS).sort((a,b)=>b.gapEnd-a.gapEnd);
-  const recientes=d.slice().sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
+  const recientes=d.filter(c=>c.altaDate!=null).sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
   const inactHTML=inact.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · ${fmt(c.total)} envíos totales</div></div><div class="right"><div class="${c.gapEnd>=30?'c-red':'c-amber'}" style="font-weight:700;font-size:15px">${c.gapEnd}<span style="font-size:11px;font-weight:500"> días</span></div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos</div></div></div>`).join("")||`<div class="empty">Ningún cliente inactivo &gt;${INACT_DAYS} días. 👍</div>`;
   const recHTML=recientes.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · alta operativa ${c.altaDate.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div style="font-weight:700;font-size:14px" class="c-${c.status.cls||''}">${c.cumpl==null?"—":c.cumpl+"%"}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.ttc==null?"sin alcanzar comp.":"comp. en "+c.ttc+"d"}</div></div></div>`).join("")||`<div class="empty">Sin datos</div>`;
   return `<div class="kpis k3">
