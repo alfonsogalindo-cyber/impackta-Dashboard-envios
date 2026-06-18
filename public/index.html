@@ -268,7 +268,7 @@
 /* ===== CONFIG ===== */
 const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=14;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
-const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
 CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
 CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
@@ -377,10 +377,10 @@ const fmt1=n=>n.toLocaleString("es-ES",{maximumFractionDigits:1});
 const pctSign=n=>n==null?"—":(n>0?"+":"")+Math.round(n)+"%";
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 /* ===== BAJAS (clientes dados de baja) — compartidas vía Cloudflare KV, con respaldo local ===== */
-let BAJAS=new Set(), BAJAS_SRC="local";   // "kv" si las lee del backend compartido
+let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";   // "kv" si las lee del backend compartido
 const keyOf=c=>c.cod||c.name;
-const isBaja=c=>BAJAS.has(keyOf(c));
-function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}
+const isBaja=c=>BAJAS.has(keyOf(c));const isNuevo=c=>NUEVOS.has(keyOf(c));
+function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}catch(e){NUEVOS_SRC="local"}}
 function loadBajasLocal(){try{const r=localStorage.getItem("impackta-bajas");if(r)BAJAS=new Set(JSON.parse(r))}catch(e){}}
 async function syncBajasFromKV(){   // intenta leer la lista compartida; si no hay backend, se queda en local
   try{const r=await fetch(API_BAJAS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();
@@ -398,7 +398,7 @@ async function toggleBaja(k){   // optimista: cambia ya en pantalla y lo confirm
 function fcAll(){let d=MODEL.clients.slice();if(state.comercial!=="Todos")d=d.filter(x=>x.comercial===state.comercial);
   if(state.q){const q=state.q.toLowerCase();d=d.filter(x=>x.name.toLowerCase().includes(q)||x.poblacion.toLowerCase().includes(q))}return d}
 // fc = solo activos (excluye bajas) — base de TODAS las métricas evaluativas
-function fc(){return fcAll().filter(c=>!isBaja(c))}
+function fc(){return fcAll().filter(c=>!isBaja(c)&&!isNuevo(c))}
 
 /* ===== SORTABLE TABLE ===== */
 // cols: [{k,label,align:'r'|'',val:(r)=>sortValue,cell:(r)=>html,defDir:1|-1,sortable:false?}]
@@ -648,7 +648,7 @@ function renderSegmentacion(){
   return `<div class="blk"><div class="blkhd"><span class="eyebrow">Por comercial</span><h2>Cartera y cumplimiento por comercial</h2></div><div class="panel">${comTable}</div></div>
   <div class="blk"><div class="blkhd"><span class="eyebrow">Por tarifa</span><h2>Volumen y cumplimiento por tarifa</h2></div><div class="panel">${tarTable}</div></div>`;
 }
-function renderAltas(){
+function renderNuevosSection(){const nc=fcAll().filter(isNuevo);if(!nc.length)return'';const rows=nc.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div class="c-blue" style="font-weight:700;font-size:13px">En alta</div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos aún</div></div></div>`).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Nuevos clientes</span><h2>En proceso de alta</h2><span class="hint">se incorporarán al detectar el primer envío</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderAltas(){
   const d=fc();
   const inact=d.filter(x=>x.gapEnd>=INACT_DAYS).sort((a,b)=>b.gapEnd-a.gapEnd);
   const recientes=d.filter(c=>c.altaDate!=null).sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
@@ -661,7 +661,7 @@ function renderAltas(){
   </div>
   <div class="blk grid2">
     <div><div class="blkhd"><span class="eyebrow">Riesgo de baja</span><h2>Clientes inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div>
-    <div><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div></div>
+    <div><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div>${renderNuevosSection()}</div>
   </div>`;
 }
 function renderClientes(){
@@ -676,8 +676,8 @@ function renderClientes(){
     {k:"tarifa",label:"Tarifa",defDir:1,val:c=>c.tarifa,cell:c=>`<span class="mono">${esc(c.tarifa)}</span>`},
     {k:"total",label:"Total envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
     {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||''}">${c.cumpl}%</b>`},
-    {k:"estado",label:"Estado",val:c=>isBaja(c)?1:0,cell:c=>isBaja(c)?'<span class="tag red">Baja</span>':'<span class="tag green">Activo</span>'},
-    {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{const b=isBaja(c);return `<button class="bajabtn${b?' on':''}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button>`}},
+    {k:"estado",label:"Estado",val:c=>isBaja(c)?2:isNuevo(c)?1:0,cell:c=>isBaja(c)?'<span class="tag red">Baja</span>':isNuevo(c)?'<span class="tag blue">En alta</span>':'<span class="tag green">Activo</span>'},
+    {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{const b=isBaja(c),n=isNuevo(c);return `<button class="bajabtn${b?' on':''}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button><button class="bajabtn${n?' on':''}" data-toggle-nuevo="${esc(keyOf(c))}">${n?"Quitar":"Nuevo"}</button>`}},
   ],rows,{def:{k:"total",dir:-1},rowClass:c=>isBaja(c)?"isbaja":""});
   return `<div class="blk"><div class="blkhd"><span class="eyebrow">Gestión de cartera</span><h2>Clientes y bajas</h2>
     <span class="hint">Marca como baja a los clientes que dejen de trabajar con vosotros. Dejan de contar en cumplimiento, déficit, tendencias y segmentación; <b>solo siguen sumando en «Envíos totales»</b> (histórico). ${BAJAS_SRC==="kv"?'<b style="color:var(--green)">Compartidas con todo el equipo.</b>':'<b style="color:var(--amber)">Guardadas solo en este navegador</b> (al publicar en Cloudflare serán compartidas).'}</span></div>
@@ -720,7 +720,7 @@ async function loadLive(){const btn=$("#refresh");btn.disabled=true;btn.querySel
   for(const u of sources){
     try{const res=await fetch(u,{cache:"no-store"});if(!res.ok)continue;const txt=await res.text();
       if(txt.trim().startsWith("<"))continue;const m=transform(parseCSV(txt));if(!m.clients.length)continue;
-      MODEL=m;SRC="live";UPDATED=new Date();renderAll();setMeta();
+      MODEL=m;MODEL.clients.forEach(c=>{if(c.total>0&&NUEVOS.has(keyOf(c))){NUEVOS.delete(keyOf(c));saveNuevosLocal();}});SRC="live";UPDATED=new Date();renderAll();setMeta();
       banner("ok",`<b>Conectado.</b> ${m.clients.length} clientes leídos en vivo desde el Sheet (hoja 2026).`);
       setTimeout(()=>$("#banner").classList.remove("show"),4200);ok=true;break;
     }catch(e){/* siguiente fuente */}
@@ -732,7 +732,7 @@ function boot(){MODEL=transform(parseCSV(SNAPSHOT.trim()));SRC="snapshot";render
 
 /* ===== EVENTS ===== */
 $("#panels").addEventListener("click",e=>{
-  const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}
+  const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}const ng=e.target.closest("[data-toggle-nuevo]");if(ng){toggleNuevo(ng.dataset.toggleNuevo);return}
   const cf=e.target.closest("[data-cfilter]");if(cf){state.clientesFilter=cf.dataset.cfilter;renderActive();return}
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
@@ -747,10 +747,14 @@ $("#theme").addEventListener("click",()=>{const cur=document.documentElement.get
 
 /* ===== INIT ===== */
 (function(){let th="light";try{th=localStorage.getItem("impackta-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){}applyTheme(th)})();
-loadBajasLocal();
+loadBajasLocal();loadNuevosLocal();
 boot();
 loadLive();
-syncBajasFromKV();
+syncBajasFromKV();syncNuevosFromKV();
 </script>
 </body>
 </html>
+
+
+
+
