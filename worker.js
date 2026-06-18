@@ -7,6 +7,7 @@
 
 const SHEET_ID   = "10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU";
 const SHEET_NAME = "2026";
+const SHEET_GID  = "103618376";  // gid de la pestana 2026 (export incluye filas ocultas; gviz no)
 const KV_KEY     = "lista";
 const KV_KEY_NUEVOS = "nuevos";
 
@@ -44,11 +45,11 @@ export default {
 
     // ── /api/sheet ─────────────────────────────────────────────────────────
     if (path === "/api/sheet") {
-      const src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+      const src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
       try {
         const res = await fetch(src, { headers: { "User-Agent": "Mozilla/5.0" } });
         if (!res.ok) return new Response("error origen: " + res.status, { status: 502 });
-        const csv = await res.text();
+        const csv = (await res.text()).replace(/^﻿/, "");
         return new Response(csv, {
           headers: { "content-type": "text/csv; charset=utf-8", "cache-control": "no-store" },
         });
