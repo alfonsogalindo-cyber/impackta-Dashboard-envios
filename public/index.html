@@ -488,7 +488,7 @@ function renderResumen(){
   const mediaCD=act?totAct/(act*MODEL.N):0;
   const ag=aggregate(d,MODEL.dates);
   const nBaja=fcAll().length-d.length;
-  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.mediaDia<x.comp).length;
+  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.cumpl<90).length;
   const pct=wc.length?Math.round(cumplen/wc.length*100):0;
   const wSeries=MODEL.gWeeks.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})}));
   const worst=wc.slice().sort((a,b)=>a.deficit-b.deficit).slice(0,5);
@@ -497,7 +497,7 @@ function renderResumen(){
     {ic:IC.users,lab:"Clientes activos",val:fmt(act),sub:`${wc.length} con compromiso`},
     {ic:IC.chart,accent:true,lab:"Media env/cliente/día",val:fmt1(mediaCD),sub:"solo clientes activos"},
     {ic:IC.check,lab:"Cartera en cumplimiento",val:`${pct}<small>%</small>`,cls:pct>=60?"c-green":pct>=35?"c-amber":"c-red",sub:`<b>${cumplen}</b> de ${wc.length} cumplen`},
-    {ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",sub:"media < compromiso"},
+    {ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",sub:"por debajo del 90%"},
     {ic:IC.trend,lab:"Variación semanal",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada (WoW)"},
   ];
   return `<div class="kpis k6">${cards.map(kpiCard).join("")}</div>
@@ -547,7 +547,7 @@ function scatterBig(d){
 }
 function renderCumplimiento(){
   const d=fc(),wc=d.filter(x=>x.comp!=null);
-  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.mediaDia<x.comp).length,supera=wc.filter(x=>x.cumpl>=130).length;
+  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.cumpl<90).length,supera=wc.filter(x=>x.cumpl>=130).length;
   const pct=wc.length?Math.round(cumplen/wc.length*100):0;
   const ranked=sortRank(d.slice()),CAP=160,refPos=100/CAP*100;
   const rankHTML=ranked.map(x=>{const w=x.cumpl==null?0:Math.min(x.cumpl,CAP)/CAP*100,st=x.status,over=x.cumpl!=null&&x.cumpl>CAP;
@@ -573,7 +573,7 @@ function renderCumplimiento(){
   const rachasHTML=rachas.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · compromiso ${c.comp}/día · ${c.cumpl}% medio</div></div><div class="right"><div class="${c.racha>=10?'c-red':'c-amber'}" style="font-weight:700;font-size:15px">${c.racha}<span style="font-size:11px;font-weight:500"> días</span></div><div class="m" style="font-size:11px;color:var(--muted)">sin cumplir</div></div></div>`).join("")||`<div class="empty">Ningún cliente con racha de incumplimiento.</div>`;
   return `<div class="kpis k3">
     ${kpiCard({ic:IC.check,lab:"Cartera en cumplimiento",val:`${pct}<small>%</small>`,cls:pct>=60?"c-green":pct>=35?"c-amber":"c-red",sub:`<b>${cumplen}</b> de ${wc.length} · ${supera} superan (≥130%)`})}
-    ${kpiCard({ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",accent:false,sub:"media diaria < compromiso"})}
+    ${kpiCard({ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",accent:false,sub:"por debajo del 90%"})}
     ${kpiCard({ic:IC.box,lab:"Déficit acumulado total",val:fmt(wc.reduce((a,c)=>a+Math.min(c.deficit,0),0)),cls:"c-red",sub:"envíos por debajo de lo pactado"})}
   </div>
   <div class="blk">
