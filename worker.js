@@ -8,6 +8,7 @@
 const SHEET_ID   = "10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU";
 const SHEET_NAME = "2026";
 const KV_KEY     = "lista";
+const KV_KEY_NUEVOS = "nuevos";
 
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -24,6 +25,14 @@ async function readBajas(env) {
   if (!env.BAJAS_KV) return [];
   try {
     const raw = await env.BAJAS_KV.get(KV_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+async function readNuevos(env) {
+  if (!env.BAJAS_KV) return [];
+  try {
+    const raw = await env.BAJAS_KV.get(KV_KEY_NUEVOS);
     return raw ? JSON.parse(raw) : [];
   } catch { return []; }
 }
@@ -70,6 +79,31 @@ export default {
       }
       await env.BAJAS_KV.put(KV_KEY, JSON.stringify(list));
       return jsonRes({ bajas: list });
+    }
+
+
+    // ── /api/nuevos GET ─────────────────────────────────────────────────────
+    if (path === "/api/nuevos" && request.method === "GET") {
+      if (!env.BAJAS_KV) return jsonRes({ nuevos: [], error: "KV no configurado" });
+      return jsonRes({ nuevos: await readNuevos(env) });
+    }
+
+    // ── /api/nuevos POST ────────────────────────────────────────────────────
+    if (path === "/api/nuevos" && request.method === "POST") {
+      if (!env.BAJAS_KV) return jsonRes({ nuevos: [], error: "KV no configurado" });
+      let body;
+      try { body = await request.json(); } catch { return jsonRes({ error: "json inválido" }, 400); }
+      let list = await readNuevos(env);
+      if (body.op === "set" && Array.isArray(body.nuevos)) {
+        list = [...new Set(body.nuevos.map(String))];
+      } else if (body.op === "toggle" && body.key != null) {
+        const k = String(body.key);
+        list = list.includes(k) ? list.filter(x => x !== k) : [...list, k];
+      } else {
+        return jsonRes({ error: "operación no reconocida" }, 400);
+      }
+      await env.BAJAS_KV.put(KV_KEY_NUEVOS, JSON.stringify(list));
+      return jsonRes({ nuevos: list });
     }
 
     // ── Todo lo demás → assets estáticos (index.html) ──────────────────────
