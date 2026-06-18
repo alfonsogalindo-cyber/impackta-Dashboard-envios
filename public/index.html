@@ -341,10 +341,11 @@ function transform(rows){
     let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
     const wm=new Map();for(let i=0;i<win.length;i++){const k=isoWeek(winD[i]);const e=wm.get(k)||{sum:0,dias:0,date:mondayOf(winD[i])};e.sum+=win[i];e.dias++;wm.set(k,e)}
     const weekly=[...wm.values()];
-    const ws=weekly.map(w=>w.sum),a=ws.slice(-3),b=ws.slice(-6,-3);
+    const wkClosed=(weekly.length&&weekly.at(-1).dias<4)?weekly.slice(0,-1):weekly;
+    const ws=wkClosed.map(w=>w.sum),a=ws.slice(-3),b=ws.slice(-6,-3);
     const ma=a.length?a.reduce((x,y)=>x+y,0)/a.length:0,mb=b.length?b.reduce((x,y)=>x+y,0)/b.length:0;
     const tval=mb===0?(ma>0?1:0):(ma-mb)/mb, tSym=tval>0.1?"↑":tval<-0.1?"↓":"=";
-    let wow=null;if(weekly.length>=2){const cw=weekly.at(-1),pw=weekly.at(-2);if(pw.sum>0)wow=(cw.sum-pw.sum)/pw.sum}
+    let wow=null;if(wkClosed.length>=2){const cw=wkClosed.at(-1),pw=wkClosed.at(-2);if(pw.sum>0)wow=(cw.sum-pw.sum)/pw.sum}
     let ttc=null;if(comp!=null)for(let i=0;i<win.length;i++){if(win[i]>=comp){ttc=i;break}}
     let lastShip=-1;for(let i=win.length-1;i>=0;i--){if(win[i]>0){lastShip=i;break}}
     const gapEnd=(N-1-l)+(win.length-1-lastShip);
