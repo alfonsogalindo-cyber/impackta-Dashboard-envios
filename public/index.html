@@ -499,7 +499,7 @@ function renderResumen(){
     {ic:IC.trend,lab:"Variación semanal",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada (WoW)"},
   ];
   return `<div class="kpis k6">${cards.map(kpiCard).join("")}</div>
-  ${renderRiesgoSection()}<div class="blk grid2">
+  <div class="blk grid2">
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Actividad</span><h2 style="font-size:14px">Envíos por semana</h2></div>${lineChart(wSeries,{color:COL.blue,fillId:"rg1"})}</div></div>
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:8px"><span class="eyebrow">Atención</span><h2 style="font-size:14px">Mayor déficit acumulado</h2></div>
       <div class="lst" style="padding:0">${worst.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · compromiso ${c.comp}/día</div></div><div class="right"><div class="c-red" style="font-weight:700;font-size:15px">${fmt(c.deficit)}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.cumpl}% cumpl.</div></div></div>`).join("")||'<div class="empty">Sin datos</div>'}</div>
@@ -583,7 +583,7 @@ function renderCumplimiento(){
   </div>
   <div class="blk"><div class="blkhd"><span class="eyebrow">Tarifa</span><h2>Compromiso vs. envíos reales</h2><span class="hint">cada burbuja = un cliente · tamaño = volumen total · por debajo de la diagonal = no llega a lo pactado</span></div>
     <div class="panel"><div class="chart-pad">${scatterBig(d)}</div></div></div>
-  ${renderRiesgoSection()}<div class="blk grid2">
+  <div class="blk grid2">
     <div><div class="blkhd"><span class="eyebrow">Detalle</span><h2>Déficit / superávit acumulado</h2></div><div class="panel">${defTable}</div></div>
     <div><div class="blkhd"><span class="eyebrow">Alertas</span><h2>Días consecutivos sin cumplir</h2></div><div class="panel"><div class="lst">${rachasHTML}</div></div></div>
   </div>`;
@@ -611,7 +611,7 @@ function renderTendencia(){
     ${kpiCard({ic:IC.trend,accent:true,lab:"Variación semanal (WoW)",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada vs anterior"})}
     ${kpiCard({ic:IC.cal,lab:"Variación mensual (MoM)",val:pctSign(ag.momG),cls:ag.momG>=0?"c-green":"c-red",sub:"último mes vs anterior"})}
   </div>
-  ${renderRiesgoSection()}<div class="blk grid2">
+  <div class="blk grid2">
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Tendencia</span><select class="sel" id="trendsel" style="margin-left:auto;max-width:240px">${sel.map(c=>`<option value="${esc(c.name)}"${c.name===state.trendClient?" selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
       <div class="legend-inline"><span><i class="ln sol"></i>Envíos/semana</span><span><i class="ln dash"></i>Compromiso semanal</span></div>${lineChart(wSeries,{ref:compW,refLabel:"compromiso",color:COL.blue,fillId:"td"})}</div></div>
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Rampa</span><h2 style="font-size:14px">Curva desde el alta${x?` · ${esc(x.name)}`:""}</h2></div>
