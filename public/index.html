@@ -364,8 +364,9 @@ function aggregate(cls,dates){
   const gMonths=[...gmMap.entries()].sort((a,b)=>a[0]-b[0]);
   const closedW=gWeeks.filter((w,i)=>i<gWeeks.length-1||w.dias>=4);
   let wowG=null;if(closedW.length>=2)wowG=(closedW.at(-1).sum-closedW.at(-2).sum)/closedW.at(-2).sum*100;
-  let momG=null;if(gMonths.length>=2)momG=(gMonths.at(-1)[1]-gMonths.at(-2)[1])/gMonths.at(-2)[1]*100;
-  return {perDay,gWeeks,gMonths,wowG,momG};
+  let momG=null,momRange=null;
+  if(dates.length){const anchor=dates.at(-1);const m1=new Date(anchor);m1.setMonth(m1.getMonth()-1);const m2=new Date(anchor);m2.setMonth(m2.getMonth()-2);let curS=0,prevS=0;dates.forEach((d,i)=>{if(d>m1&&d<=anchor)curS+=perDay[i];else if(d>m2&&d<=m1)prevS+=perDay[i];});if(prevS>0)momG=(curS-prevS)/prevS*100;const fmtD=x=>x.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"});momRange=fmtD(m1)+" al "+fmtD(anchor)+" vs "+fmtD(m2)+" al "+fmtD(m1);}
+  return {perDay,gWeeks,gMonths,wowG,momG,momRange};
 }
 
 /* ===== STATE ===== */
@@ -609,7 +610,7 @@ function renderTendencia(){
   ],wc,{def:{k:"tend",dir:1}});
   return `<div class="kpis k2">
     ${kpiCard({ic:IC.trend,accent:true,lab:"Variación semanal (WoW)",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada vs anterior"})}
-    ${kpiCard({ic:IC.cal,lab:"Variación mensual (MoM)",val:pctSign(ag.momG),cls:ag.momG>=0?"c-green":"c-red",sub:"último mes vs anterior"})}
+    ${kpiCard({ic:IC.cal,lab:"Variación mensual (MoM)",val:pctSign(ag.momG),cls:ag.momG>=0?"c-green":"c-red",sub:ag.momRange||"mes móvil vs anterior"})}
   </div>
   <div class="blk grid2">
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Tendencia</span><select class="sel" id="trendsel" style="margin-left:auto;max-width:240px">${sel.map(c=>`<option value="${esc(c.name)}"${c.name===state.trendClient?" selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
