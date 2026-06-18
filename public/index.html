@@ -499,7 +499,7 @@ function renderResumen(){
     {ic:IC.trend,lab:"Variación semanal",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada (WoW)"},
   ];
   return `<div class="kpis k6">${cards.map(kpiCard).join("")}</div>
-  <div class="blk grid2">
+  ${renderRiesgoSection()}<div class="blk grid2">
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Actividad</span><h2 style="font-size:14px">Envíos por semana</h2></div>${lineChart(wSeries,{color:COL.blue,fillId:"rg1"})}</div></div>
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:8px"><span class="eyebrow">Atención</span><h2 style="font-size:14px">Mayor déficit acumulado</h2></div>
       <div class="lst" style="padding:0">${worst.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · compromiso ${c.comp}/día</div></div><div class="right"><div class="c-red" style="font-weight:700;font-size:15px">${fmt(c.deficit)}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.cumpl}% cumpl.</div></div></div>`).join("")||'<div class="empty">Sin datos</div>'}</div>
@@ -583,7 +583,7 @@ function renderCumplimiento(){
   </div>
   <div class="blk"><div class="blkhd"><span class="eyebrow">Tarifa</span><h2>Compromiso vs. envíos reales</h2><span class="hint">cada burbuja = un cliente · tamaño = volumen total · por debajo de la diagonal = no llega a lo pactado</span></div>
     <div class="panel"><div class="chart-pad">${scatterBig(d)}</div></div></div>
-  <div class="blk grid2">
+  ${renderRiesgoSection()}<div class="blk grid2">
     <div><div class="blkhd"><span class="eyebrow">Detalle</span><h2>Déficit / superávit acumulado</h2></div><div class="panel">${defTable}</div></div>
     <div><div class="blkhd"><span class="eyebrow">Alertas</span><h2>Días consecutivos sin cumplir</h2></div><div class="panel"><div class="lst">${rachasHTML}</div></div></div>
   </div>`;
@@ -611,7 +611,7 @@ function renderTendencia(){
     ${kpiCard({ic:IC.trend,accent:true,lab:"Variación semanal (WoW)",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada vs anterior"})}
     ${kpiCard({ic:IC.cal,lab:"Variación mensual (MoM)",val:pctSign(ag.momG),cls:ag.momG>=0?"c-green":"c-red",sub:"último mes vs anterior"})}
   </div>
-  <div class="blk grid2">
+  ${renderRiesgoSection()}<div class="blk grid2">
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Tendencia</span><select class="sel" id="trendsel" style="margin-left:auto;max-width:240px">${sel.map(c=>`<option value="${esc(c.name)}"${c.name===state.trendClient?" selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
       <div class="legend-inline"><span><i class="ln sol"></i>Envíos/semana</span><span><i class="ln dash"></i>Compromiso semanal</span></div>${lineChart(wSeries,{ref:compW,refLabel:"compromiso",color:COL.blue,fillId:"td"})}</div></div>
     <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Rampa</span><h2 style="font-size:14px">Curva desde el alta${x?` · ${esc(x.name)}`:""}</h2></div>
@@ -648,7 +648,7 @@ function renderSegmentacion(){
   return `<div class="blk"><div class="blkhd"><span class="eyebrow">Por comercial</span><h2>Cartera y cumplimiento por comercial</h2></div><div class="panel">${comTable}</div></div>
   <div class="blk"><div class="blkhd"><span class="eyebrow">Por tarifa</span><h2>Volumen y cumplimiento por tarifa</h2></div><div class="panel">${tarTable}</div></div>`;
 }
-function renderNuevosSection(){const nc=fcAll().filter(isNuevo);if(!nc.length)return'';const rows=nc.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div class="c-blue" style="font-weight:700;font-size:13px">En alta</div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos aún</div></div></div>`).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Nuevos clientes</span><h2>En proceso de alta</h2><span class="hint">se incorporarán al detectar el primer envío</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderAltas(){
+function riskScore(c){let s=0;if(c.cumpl==null)s+=3;else if(c.cumpl<65)s+=4;else if(c.cumpl<90)s+=2;if(c.tSym==='↓')s+=3;else if(c.tSym==='=')s+=1;if(c.gapEnd>30)s+=3;else if(c.gapEnd>14)s+=2;else if(c.gapEnd>7)s+=1;return s;}function motivoRiesgo(c){const p=[];if(c.gapEnd>=7)p.push(c.gapEnd+' días sin envíos');if(c.tSym==='↓'){const ws=c.weekly.map(w=>w.sum);let n=0;for(let i=ws.length-1;i>0;i--){if(ws[i]<ws[i-1])n++;else break;}if(n>=2)p.push('bajando '+n+' semanas');else if(c.tval<-0.1)p.push('tendencia a la baja');}if(p.length<2&&c.cumpl!=null&&c.cumpl<65)p.push('al '+c.cumpl+'% del compromiso');if(p.length<2&&c.racha>=10)p.push(c.racha+' días bajo objetivo');return p.slice(0,2).join(', ')||'Seguimiento preventivo';}function riskLevel(s){if(s>=6)return{cls:'red',label:'Urgente'};if(s>=3)return{cls:'amber',label:'Prioritario'};return{cls:'',label:'Vigilancia'};}function renderRiesgoSection(){const sc=fc().map(c=>({c,s:riskScore(c)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s);if(!sc.length)return `<div class="blk"><div class="blkhd"><span class="eyebrow">Seguimiento comercial</span><h2>Clientes en riesgo</h2></div><div class="panel"><div class="empty">Sin clientes en riesgo esta semana.</div></div></div>`;const rows=sc.map(({c,s})=>{const lv=riskLevel(s);return `<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} &middot; ${motivoRiesgo(c)}</div></div><div class="right"><span class="tag ${lv.cls}">${lv.label}</span></div></div>`;}).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Seguimiento comercial</span><h2>Clientes en riesgo</h2><span class="hint">ordenados por nivel de riesgo</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderNuevosSection(){const nc=fcAll().filter(isNuevo);if(!nc.length)return'';const rows=nc.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div class="c-blue" style="font-weight:700;font-size:13px">En alta</div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos aún</div></div></div>`).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Nuevos clientes</span><h2>En proceso de alta</h2><span class="hint">se incorporarán al detectar el primer envío</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderAltas(){
   const d=fc();
   const inact=d.filter(x=>x.gapEnd>=INACT_DAYS).sort((a,b)=>b.gapEnd-a.gapEnd);
   const recientes=d.filter(c=>c.altaDate!=null).sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
@@ -659,7 +659,7 @@ function renderNuevosSection(){const nc=fcAll().filter(isNuevo);if(!nc.length)re
     ${kpiCard({ic:IC.users,lab:"Clientes en cartera",val:fmt(d.length),sub:"total en la vista"})}
     ${kpiCard({ic:IC.check,lab:"Altas que ya cumplen",val:fmt(d.filter(x=>x.comp!=null&&x.ttc!=null).length),cls:"c-green",sub:"alcanzaron su compromiso"})}
   </div>
-  <div class="blk grid2">
+  ${renderRiesgoSection()}<div class="blk grid2">
     <div><div class="blkhd"><span class="eyebrow">Riesgo de baja</span><h2>Clientes inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div>
     <div><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div>${renderNuevosSection()}</div>
   </div>`;
