@@ -658,9 +658,10 @@ function riskScore(c){let s=0;if(c.cumpl==null)s+=3;else if(c.cumpl<65)s+=4;else
     ${kpiCard({ic:IC.users,lab:"Clientes en cartera",val:fmt(d.length),sub:"total en la vista"})}
     ${kpiCard({ic:IC.check,lab:"Altas que ya cumplen",val:fmt(d.filter(x=>x.comp!=null&&x.ttc!=null).length),cls:"c-green",sub:"alcanzaron su compromiso"})}
   </div>
-  ${renderRiesgoSection()}<div class="blk"><div class="blkhd"><h2>Inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div>
-  <div class="blk"><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div></div>
-  ${renderNuevosSection()}`;
+  <div class="blk grid2">
+    <div>${renderRiesgoSection()}<div class="blk"><div class="blkhd"><h2>Inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div></div>
+    <div><div class="blk"><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div></div>${renderNuevosSection()}</div>
+  </div>`;
 }
 function renderClientes(){
   const all=fcAll();
