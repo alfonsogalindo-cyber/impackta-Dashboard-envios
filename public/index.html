@@ -266,7 +266,7 @@
 
 <script>
 /* ===== CONFIG ===== */
-const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=14;
+const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
 const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
@@ -654,15 +654,13 @@ function riskScore(c){let s=0;if(c.cumpl==null)s+=3;else if(c.cumpl<65)s+=4;else
   const recientes=d.filter(c=>c.altaDate!=null).sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
   const inactHTML=inact.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · ${fmt(c.total)} envíos totales</div></div><div class="right"><div class="${c.gapEnd>=30?'c-red':'c-amber'}" style="font-weight:700;font-size:15px">${c.gapEnd}<span style="font-size:11px;font-weight:500"> días</span></div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos</div></div></div>`).join("")||`<div class="empty">Ningún cliente inactivo &gt;${INACT_DAYS} días. 👍</div>`;
   const recHTML=recientes.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · alta operativa ${c.altaDate.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div style="font-weight:700;font-size:14px" class="c-${c.status.cls||''}">${c.cumpl==null?"—":c.cumpl+"%"}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.ttc==null?"sin alcanzar comp.":"comp. en "+c.ttc+"d"}</div></div></div>`).join("")||`<div class="empty">Sin datos</div>`;
-  return `<div class="kpis k3">
-    ${kpiCard({ic:IC.alert,lab:`Inactivos / riesgo (&gt;${INACT_DAYS}d)`,val:fmt(inact.length),cls:inact.length?"c-red":"c-green",sub:"sin envíos recientes"})}
+  return `<div class="kpis k2">
     ${kpiCard({ic:IC.users,lab:"Clientes en cartera",val:fmt(d.length),sub:"total en la vista"})}
     ${kpiCard({ic:IC.check,lab:"Altas que ya cumplen",val:fmt(d.filter(x=>x.comp!=null&&x.ttc!=null).length),cls:"c-green",sub:"alcanzaron su compromiso"})}
   </div>
-  ${renderRiesgoSection()}<div class="blk grid2">
-    <div><div class="blkhd"><span class="eyebrow">Riesgo de baja</span><h2>Clientes inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div>
-    <div><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div>${renderNuevosSection()}</div>
-  </div>`;
+  ${renderRiesgoSection()}<div class="blk"><div class="blkhd"><h2>Inactivos</h2><span class="hint">sin ningún envío en los últimos ${INACT_DAYS} días</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div>
+  <div class="blk"><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div></div>
+  ${renderNuevosSection()}`;
 }
 function renderClientes(){
   const all=fcAll();
