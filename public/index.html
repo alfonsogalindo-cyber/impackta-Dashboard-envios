@@ -677,7 +677,7 @@ function renderClientes(){
     {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
     {k:"tarifa",label:"Tarifa",defDir:1,val:c=>c.tarifa,cell:c=>`<span class="mono">${esc(c.tarifa)}</span>`},
     {k:"total",label:"Total envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
-    {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||''}">${c.cumpl}%</b>`},
+    {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.comp==null?'<span class="tag gray">Sin compromiso</span>':c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||''}">${c.cumpl}%</b>`},
     {k:"estado",label:"Estado",val:c=>isBaja(c)?2:isNuevo(c)?1:0,cell:c=>isBaja(c)?'<span class="tag red">Baja</span>':isNuevo(c)?'<span class="tag blue">En alta</span>':'<span class="tag green">Activo</span>'},
     {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{const b=isBaja(c),n=isNuevo(c);return `<button class="bajabtn${b?' on':''}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button><button class="bajabtn${n?' on':''}" data-toggle-nuevo="${esc(keyOf(c))}">${n?"Quitar":"Nuevo"}</button>`}},
   ],rows,{def:{k:"total",dir:-1},rowClass:c=>isBaja(c)?"isbaja":""});
