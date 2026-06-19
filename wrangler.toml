@@ -1,4 +1,4 @@
-name = "impackta-clientes"
+name = "impackta-dashboard-envios"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
