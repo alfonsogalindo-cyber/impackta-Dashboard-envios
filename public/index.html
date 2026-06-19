@@ -225,7 +225,18 @@
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   @media print{header{position:static}.hd-right,.filterbar,.tabbar,.banner{display:none!important}
     .tabpanel{display:block!important}body{background:#fff}.panel,.kpi{box-shadow:none}}
-</style>
+.grpico{display:inline-block;color:#185FA5;font-size:15px;line-height:1}
+.primbtn{height:30px;padding:0 14px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer}
+.primbtn:disabled{opacity:.4;cursor:not-allowed}
+.selbox{width:16px;height:16px;cursor:pointer}
+tr.isgroup{background:var(--bg-2)}
+.grow{display:flex;gap:10px;padding:8px 15px;border-top:1px solid var(--line);font-size:12.5px;align-items:center}
+.grow.ghead2{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-top:none}
+.gbadge{background:var(--bg-2);border-radius:8px;padding:8px 13px;min-width:110px}
+.gblab{font-size:11px;color:var(--ink-2)}
+.gbval{font-size:18px;font-weight:600}
+.gmodal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:80}
+.gmodal{background:var(--card);border-radius:14px;padding:22px;width:360px;border:1px solid var(--line)}</style>
 </head>
 <body>
 <header>
@@ -268,7 +279,7 @@
 /* ===== CONFIG ===== */
 const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
-const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
 CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
 CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
@@ -379,7 +390,7 @@ const fmt1=n=>n.toLocaleString("es-ES",{maximumFractionDigits:1});
 const pctSign=n=>n==null?"—":(n>0?"+":"")+Math.round(n)+"%";
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 /* ===== BAJAS (clientes dados de baja) — compartidas vía Cloudflare KV, con respaldo local ===== */
-let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";   // "kv" si las lee del backend compartido
+let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";let GRUPOS=[], GRUPOS_SRC="local";let SEL={};   // "kv" si las lee del backend compartido
 const keyOf=c=>c.cod||c.name;
 const isBaja=c=>BAJAS.has(keyOf(c));const isNuevo=c=>NUEVOS.has(keyOf(c));
 function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}catch(e){NUEVOS_SRC="local"}}
@@ -397,7 +408,66 @@ async function toggleBaja(k){   // optimista: cambia ya en pantalla y lo confirm
   catch(e){/* sin backend: queda guardado en este navegador */}
 }
 // fcAll = filtro comercial+búsqueda incluyendo bajas (para total de envíos y gestión)
-function fcAll(){let d=MODEL.clients.slice();if(state.comercial!=="Todos")d=d.filter(x=>x.comercial===state.comercial);
+/* ===== GRUPOS (cuentas agrupadas) ===== */
+function groupedKeys(){const s=new Set();GRUPOS.forEach(g=>(g.miembros||[]).forEach(k=>s.add(String(k))));return s;}
+function buildGroupClient(g){
+  const mk=(g.miembros||[]).map(String);
+  const members=MODEL.clients.filter(c=>mk.includes(String(keyOf(c))));
+  if(!members.length)return null;
+  const N=MODEL.N,dates=MODEL.dates,axis=new Array(N).fill(null);
+  let compSum=0,hasComp=false;
+  members.forEach(m=>{if(m.comp!=null){compSum+=m.comp;hasComp=true;}for(let i=0;i<m.ramp.length;i++){const idx=m.altaIdx+i;if(idx>=0&&idx<N)axis[idx]=(axis[idx]==null?0:axis[idx])+m.ramp[i];}});
+  const comp=hasComp?compSum:null;
+  const nn=axis.map((v,i)=>v!=null?i:-1).filter(i=>i>=0),hasData=nn.length>0;
+  const f=hasData?nn[0]:0,l=hasData?nn[nn.length-1]:-1;
+  const win=hasData?axis.slice(f,l+1).map(v=>v==null?0:v):[],winD=hasData?dates.slice(f,l+1):[];
+  const total=win.reduce((a,b)=>a+b,0),dias=win.length,conEnvio=win.filter(v=>v>0).length;
+  const mediaDia=dias?total/dias:0,cumpl=!hasData?null:(comp?Math.round(mediaDia/comp*100):null);
+  const deficit=!hasData?null:(comp!=null?total-comp*dias:null);
+  let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
+  const wm=new Map();for(let i=0;i<win.length;i++){const k=isoWeek(winD[i]);const e=wm.get(k)||{sum:0,dias:0,date:mondayOf(winD[i])};e.sum+=win[i];e.dias++;wm.set(k,e)}
+  const weekly=[...wm.values()];
+  const wkClosed=(weekly.length&&weekly.at(-1).dias<4)?weekly.slice(0,-1):weekly;
+  const ws=wkClosed.map(w=>w.sum),a=ws.slice(-3),b=ws.slice(-6,-3);
+  const ma=a.length?a.reduce((x,y)=>x+y,0)/a.length:0,mb=b.length?b.reduce((x,y)=>x+y,0)/b.length:0;
+  const tval=!b.length?0:(mb===0?(ma>0?1:0):(ma-mb)/mb),tSym=!b.length?"=":(tval>0.1?"↑":tval<-0.1?"↓":"=");
+  let wow=null;if(wkClosed.length>=2){const cw=wkClosed.at(-1),pw=wkClosed.at(-2);if(pw.sum>0)wow=(cw.sum-pw.sum)/pw.sum}
+  let ttc=null;if(comp!=null)for(let i=0;i<win.length;i++){if(win[i]>=comp){ttc=i;break}}
+  let lastShip=-1;for(let i=win.length-1;i>=0;i--){if(win[i]>0){lastShip=i;break}}
+  const gapEnd=(N-1-l)+(win.length-1-lastShip);
+  const coms=[...new Set(members.map(m=>m.comercial))],tars=[...new Set(members.map(m=>m.tarifa))];
+  return {name:g.nombre,isGroup:true,members,miembros:mk,comp,cumpl,cod:"",tarifa:tars.length===1?tars[0]:"Varios",comercial:coms.length===1?coms[0]:"Varios",poblacion:"",total,dias,conEnvio,mediaDia:+mediaDia.toFixed(1),mediaSem:+(mediaDia*5).toFixed(1),deficit,racha,tSym,tval,wow,ttc,gapEnd,altaIdx:hasData?f:-1,altaDate:hasData?dates[f]:null,ramp:win.slice(),weekly,status:statusOf(cumpl)};
+}
+function collapsedClients(){
+  if(!MODEL)return [];
+  if(!GRUPOS.length)return MODEL.clients.slice();
+  const gk=groupedKeys();
+  const indiv=MODEL.clients.filter(c=>!gk.has(String(keyOf(c))));
+  const grp=GRUPOS.map((g,i)=>{const c=buildGroupClient(g);if(c)c.gidx=i;return c;}).filter(Boolean);
+  return indiv.concat(grp);
+}
+async function syncGruposFromKV(){try{const r=await fetch(API_GRUPOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();GRUPOS=Array.isArray(j.grupos)?j.grupos:[];GRUPOS_SRC="kv";renderAll();}catch(e){GRUPOS_SRC="local"}}
+async function saveGruposKV(){try{await fetch(API_GRUPOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"set",grupos:GRUPOS})});}catch(e){}}
+function commonGroupName(ns){if(!ns.length)return"Grupo nuevo";const f=ns[0].split(" ")[0].replace(/[^A-Za-z0-9]/g,"");const all=ns.every(n=>n.toUpperCase().indexOf(f.toUpperCase())===0);return all&&f.length>1?"Grupo "+f:"Grupo nuevo";}
+function createGroup(nombre){const keys=Object.keys(SEL).filter(k=>SEL[k]);if(keys.length<2)return;GRUPOS.push({nombre:(nombre||"Grupo nuevo").trim()||"Grupo nuevo",miembros:keys});SEL={};state.agruparModal=false;state.clientesFilter="grp";saveGruposKV();renderActive();}
+function ungroupGroup(i){if(i>=0&&i<GRUPOS.length){GRUPOS.splice(i,1);saveGruposKV();renderActive();}}
+function renderAgruparModal(){
+  const keys=Object.keys(SEL).filter(k=>SEL[k]);const names=[];
+  MODEL.clients.forEach(c=>{if(keys.includes(String(keyOf(c))))names.push(c.name);});
+  const def=commonGroupName(names);
+  return `<div class="gmodal-ov"><div class="gmodal"><div style="font-size:16px;font-weight:600;margin-bottom:5px">Nombrar grupo</div><div style="font-size:12px;color:var(--muted);margin-bottom:14px">Se agruparán ${names.length} cuentas: ${names.map(esc).join(", ")}</div><input id="gname" type="text" value="${esc(def)}" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit"><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="bajabtn" data-grupo-cancel>Cancelar</button><button class="primbtn" data-grupo-crear>Crear grupo</button></div></div></div>`;
+}
+function renderGruposBody(){
+  const grp=fcAll().filter(c=>c.isGroup);
+  if(!grp.length)return '<div class="panel" style="padding:24px;text-align:center;color:var(--muted)">Aún no hay grupos. Ve a "Activos", marca 2+ cuentas y pulsa Agrupar.</div>';
+  return grp.map(g=>{
+    const e=g.status;
+    const memHead=`<div class="grow ghead2"><span style="flex:1">Empresa</span><span style="width:150px">Comercial · Tarifa</span><span style="width:64px;text-align:right">Total</span><span style="width:60px;text-align:right">Cumpl.</span></div>`;
+    const mems=g.members.map(m=>{const cu=m.comp==null?'<span class="tag gray">Sin comp.</span>':(m.cumpl==null?'s/d':`<b class="c-${m.status.cls||''}">${m.cumpl}%</b>`);return `<div class="grow"><span style="flex:1">${esc(m.name)}</span><span style="width:150px;color:var(--muted);font-size:11.5px">${esc(m.comercial)} · ${esc(m.tarifa)}</span><span style="width:64px;text-align:right">${fmt(m.total)}</span><span style="width:60px;text-align:right">${cu}</span></div>`;}).join("");
+    return `<div class="panel" style="margin-bottom:14px"><div style="padding:13px 15px;border-bottom:1px solid var(--line)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><span class="grpico">◉</span><h2 style="font-size:15px;margin:0">${esc(g.name)}</h2><span class="tag ${e.tag||"blue"}">${e.label} como grupo</span><button class="bajabtn" style="margin-left:auto" data-ungroup="${g.gidx}">Deshacer</button></div><div style="display:flex;gap:10px;flex-wrap:wrap"><div class="gbadge"><div class="gblab">Total envíos</div><div class="gbval">${fmt(g.total)}</div></div><div class="gbadge"><div class="gblab">Compromiso/día</div><div class="gbval">${g.comp==null?"—":fmt(g.comp)}</div></div><div class="gbadge"><div class="gblab">Cumplimiento</div><div class="gbval">${g.cumpl==null?"—":g.cumpl+"%"}</div></div></div></div>${memHead}${mems}</div>`;
+  }).join("");
+}
+function fcAll(){let d=collapsedClients();if(state.comercial!=="Todos")d=d.filter(x=>x.comercial===state.comercial);
   if(state.q){const q=state.q.toLowerCase();d=d.filter(x=>x.name.toLowerCase().includes(q)||x.poblacion.toLowerCase().includes(q))}return d}
 // fc = solo activos (excluye bajas) — base de TODAS las métricas evaluativas
 function fc(){return fcAll().filter(c=>!isBaja(c)&&!isNuevo(c))}
@@ -494,7 +564,7 @@ function renderResumen(){
   const worst=wc.slice().sort((a,b)=>a.deficit-b.deficit).slice(0,5);
   const cards=[
     {ic:IC.box,lab:"Envíos totales",val:fmt(totAll),sub:nBaja?`incluye ${nBaja} de baja`:"periodo 2026 cargado"},
-    {ic:IC.users,lab:"Clientes activos",val:fmt(act),sub:`${wc.length} con compromiso`},
+    {ic:IC.users,lab:"Clientes activos",val:fmt(act),sub:`${wc.length} con compromiso${GRUPOS.length?` · incluye ${GRUPOS.length} grupo${GRUPOS.length>1?"s":""} (${GRUPOS.reduce((a,g)=>a+(g.miembros?g.miembros.length:0),0)} empresas)`:""}`},
     {ic:IC.chart,accent:true,lab:"Media env/cliente/día",val:fmt1(mediaCD),sub:"solo clientes activos"},
     {ic:IC.check,lab:"Cartera en cumplimiento",val:`${pct}<small>%</small>`,cls:pct>=60?"c-green":pct>=35?"c-amber":"c-red",sub:`<b>${cumplen}</b> de ${wc.length} cumplen`},
     {ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",sub:"por debajo del 90%"},
@@ -594,7 +664,7 @@ function renderTendencia(){
   const d=fc();
   if(!state.trendClient||!d.find(x=>x.name===state.trendClient)){const r=sortRank(d.slice());state.trendClient=(r[0]||d[0]||{}).name||null}
   const sel=d.slice().sort((a,b)=>a.name.localeCompare(b.name));
-  const x=MODEL.clients.find(c=>c.name===state.trendClient);
+  const x=d.find(c=>c.name===state.trendClient);
   const wSeries=x?x.weekly.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})})):[];
   const rampSeries=x?x.ramp.map((v,i)=>({v,x:"d"+i,label:"Día "+(i+1)+" desde alta"})):[];
   const compW=x&&x.comp!=null?x.comp*5:null;
@@ -668,25 +738,33 @@ function riskScore(c){let s=0;if(c.cumpl==null)s+=3;else if(c.cumpl<65)s+=4;else
 }
 function renderClientes(){
   const all=fcAll();
-  const nBaja=all.filter(isBaja).length, nAct=all.length-nBaja;
-  let rows=all;
-  if(state.clientesFilter==="act")rows=all.filter(c=>!isBaja(c));
-  else if(state.clientesFilter==="baja")rows=all.filter(isBaja);
-  const tbl=makeTable("clientes",[
-    {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.poblacion||"")}${c.cod?" · "+esc(c.cod):""}</div>`},
-    {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
-    {k:"tarifa",label:"Tarifa",defDir:1,val:c=>c.tarifa,cell:c=>`<span class="mono">${esc(c.tarifa)}</span>`},
-    {k:"total",label:"Total envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
-    {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.comp==null?'<span class="tag gray">Sin compromiso</span>':c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||''}">${c.cumpl}%</b>`},
-    {k:"estado",label:"Estado",val:c=>isBaja(c)?2:isNuevo(c)?1:0,cell:c=>isBaja(c)?'<span class="tag red">Baja</span>':isNuevo(c)?'<span class="tag blue">En alta</span>':'<span class="tag green">Activo</span>'},
-    {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{const b=isBaja(c),n=isNuevo(c);return `<button class="bajabtn${b?' on':''}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button><button class="bajabtn${n?' on':''}" data-toggle-nuevo="${esc(keyOf(c))}">${n?"Quitar":"Nuevo"}</button>`}},
-  ],rows,{def:{k:"total",dir:-1},rowClass:c=>isBaja(c)?"isbaja":""});
-  return `<div class="blk"><div class="blkhd"><span class="eyebrow">Gestión de cartera</span><h2>Clientes y bajas</h2>
-    <span class="hint">Marca como baja a los clientes que dejen de trabajar con vosotros. Dejan de contar en cumplimiento, déficit, tendencias y segmentación; <b>solo siguen sumando en «Envíos totales»</b> (histórico). ${BAJAS_SRC==="kv"?'<b style="color:var(--green)">Compartidas con todo el equipo.</b>':'<b style="color:var(--amber)">Guardadas solo en este navegador</b> (al publicar en Cloudflare serán compartidas).'}</span></div>
-  <div class="filterbar" style="padding:0 0 14px">
-    <div class="cfilter"><button data-cfilter="all" aria-pressed="${state.clientesFilter==='all'}">Todos (${all.length})</button><button data-cfilter="act" aria-pressed="${state.clientesFilter==='act'}">Activos (${nAct})</button><button data-cfilter="baja" aria-pressed="${state.clientesFilter==='baja'}">De baja (${nBaja})</button></div>
-  </div>
-  <div class="panel">${tbl}</div></div>`;
+  const indiv=all.filter(c=>!c.isGroup);
+  const nBaja=indiv.filter(isBaja).length;
+  const nAct=all.filter(c=>!isBaja(c)).length;
+  const nGrp=GRUPOS.length;
+  const f=state.clientesFilter;
+  const head=`<div class="blk"><div class="blkhd"><span class="eyebrow">Gestión de cartera</span><h2>Clientes y bajas</h2><span class="hint">Marca como baja a los clientes que dejen de trabajar con vosotros, o <b>agrupa varias cuentas</b> que facturan juntas para medirlas como una sola. ${BAJAS_SRC==="kv"?'<b style="color:var(--green)">Compartido con el equipo.</b>':'<b style="color:var(--amber)">Guardado solo en este navegador.</b>'}</span></div><div class="filterbar" style="padding:0 0 14px"><div class="cfilter"><button data-cfilter="all" aria-pressed="${f==="all"}">Todos (${all.length})</button><button data-cfilter="act" aria-pressed="${f==="act"}">Activos (${nAct})</button><button data-cfilter="baja" aria-pressed="${f==="baja"}">De baja (${nBaja})</button><button data-cfilter="grp" aria-pressed="${f==="grp"}">Grupos (${nGrp})</button></div></div>`;
+  let body;
+  if(f==="grp"){body=renderGruposBody();}
+  else{
+    let rows=all;
+    if(f==="act")rows=all.filter(c=>!isBaja(c));
+    else if(f==="baja")rows=all.filter(c=>!c.isGroup&&isBaja(c));
+    const selN=Object.keys(SEL).filter(k=>SEL[k]).length;
+    const bar=`<div style="display:flex;align-items:center;gap:10px;background:var(--bg-2);border-radius:10px;padding:8px 12px;margin-bottom:10px"><span id="agtxt" style="color:var(--ink-2);font-size:12.5px">${selN?selN+" cuenta"+(selN>1?"s":"")+" seleccionada"+(selN>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola"}</span><button class="primbtn" id="agbtn" style="margin-left:auto" data-agrupar ${selN>=2?"":"disabled"}>Agrupar${selN>=2?" ("+selN+")":""}</button></div>`;
+    const tbl=makeTable("clientes",[
+      {k:"sel",label:"",sortable:false,val:()=>0,cell:c=>c.isGroup?'<span class="grpico">◉</span>':`<input type="checkbox" class="selbox" data-sel="${esc(keyOf(c))}" ${SEL[keyOf(c)]?"checked":""}>`},
+      {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>c.isGroup?`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">Grupo de ${c.members.length} empresas</div>`:`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.poblacion||"")}${c.cod?" · "+esc(c.cod):""}</div>`},
+      {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
+      {k:"tarifa",label:"Tarifa",defDir:1,val:c=>c.tarifa,cell:c=>`<span class="mono">${esc(c.tarifa)}</span>`},
+      {k:"total",label:"Total envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
+      {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.comp==null?'<span class="tag gray">Sin compromiso</span>':c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||""}">${c.cumpl}%</b>`},
+      {k:"estado",label:"Estado",val:c=>c.isGroup?3:isBaja(c)?2:isNuevo(c)?1:0,cell:c=>c.isGroup?'<span class="tag blue">Grupo</span>':isBaja(c)?'<span class="tag red">Baja</span>':isNuevo(c)?'<span class="tag blue">En alta</span>':'<span class="tag green">Activo</span>'},
+      {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{if(c.isGroup)return `<button class="bajabtn" data-ungroup="${c.gidx}">Deshacer</button>`;const b=isBaja(c),n=isNuevo(c);return `<button class="bajabtn${b?" on":""}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button><button class="bajabtn${n?" on":""}" data-toggle-nuevo="${esc(keyOf(c))}">${n?"Quitar":"Nuevo"}</button>`}},
+    ],rows,{def:{k:"total",dir:-1},rowClass:c=>c.isGroup?"isgroup":(isBaja(c)?"isbaja":"")});
+    body=bar+`<div class="panel">${tbl}</div>`;
+  }
+  return head+body+`</div>`+(state.agruparModal?renderAgruparModal():"");
 }
 const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes};
 
@@ -736,6 +814,11 @@ function boot(){MODEL=transform(parseCSV(SNAPSHOT.trim()));SRC="snapshot";render
 $("#panels").addEventListener("click",e=>{
   const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}const ng=e.target.closest("[data-toggle-nuevo]");if(ng){toggleNuevo(ng.dataset.toggleNuevo);return}
   const cf=e.target.closest("[data-cfilter]");if(cf){state.clientesFilter=cf.dataset.cfilter;renderActive();return}
+   const sb=e.target.closest("[data-sel]");if(sb){const k=sb.dataset.sel;if(SEL[k])delete SEL[k];else SEL[k]=1;const n=Object.keys(SEL).filter(x=>SEL[x]).length;const tx=document.getElementById("agtxt"),bt=document.getElementById("agbtn");if(tx)tx.textContent=n?n+" cuenta"+(n>1?"s":"")+" seleccionada"+(n>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola";if(bt){bt.disabled=n<2;bt.textContent="Agrupar"+(n>=2?" ("+n+")":"");}return}
+   const ag=e.target.closest("[data-agrupar]");if(ag){if(Object.keys(SEL).filter(x=>SEL[x]).length>=2){state.agruparModal=true;renderActive();}return}
+   const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
+   const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
+   const gca=e.target.closest("[data-grupo-cancel]");if(gca){state.agruparModal=false;renderActive();return}
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
   if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
@@ -752,7 +835,7 @@ $("#theme").addEventListener("click",()=>{const cur=document.documentElement.get
 loadBajasLocal();loadNuevosLocal();
 boot();
 loadLive();
-syncBajasFromKV();syncNuevosFromKV();
+syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();
 </script>
 </body>
 </html>
