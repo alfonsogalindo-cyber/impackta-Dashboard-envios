@@ -10,6 +10,7 @@ const SHEET_NAME = "2026";
 const SHEET_GID  = "103618376";  // gid de la pestana 2026 (export incluye filas ocultas; gviz no)
 const KV_KEY     = "lista";
 const KV_KEY_NUEVOS = "nuevos";
+const KV_KEY_GRUPOS = "grupos";
 
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -34,6 +35,14 @@ async function readNuevos(env) {
   if (!env.BAJAS_KV) return [];
   try {
     const raw = await env.BAJAS_KV.get(KV_KEY_NUEVOS);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+async function readGrupos(env) {
+  if (!env.BAJAS_KV) return [];
+  try {
+    const raw = await env.BAJAS_KV.get(KV_KEY_GRUPOS);
     return raw ? JSON.parse(raw) : [];
   } catch { return []; }
 }
@@ -105,6 +114,25 @@ export default {
       }
       await env.BAJAS_KV.put(KV_KEY_NUEVOS, JSON.stringify(list));
       return jsonRes({ nuevos: list });
+    }
+
+    // --- /api/grupos GET ---
+    if (path === "/api/grupos" && request.method === "GET") {
+      if (!env.BAJAS_KV) return jsonRes({ grupos: [], error: "KV no configurado" });
+      return jsonRes({ grupos: await readGrupos(env) });
+    }
+
+    // --- /api/grupos POST ---
+    if (path === "/api/grupos" && request.method === "POST") {
+      if (!env.BAJAS_KV) return jsonRes({ grupos: [], error: "KV no configurado" });
+      let body;
+      try { body = await request.json(); } catch { return jsonRes({ error: "json invalido" }, 400); }
+      if (body.op !== "set" || !Array.isArray(body.grupos)) return jsonRes({ error: "operacion no reconocida" }, 400);
+      const list = body.grupos
+        .filter(g => g && typeof g.nombre === "string" && Array.isArray(g.miembros))
+        .map(g => ({ nombre: g.nombre, miembros: [...new Set(g.miembros.map(String))] }));
+      await env.BAJAS_KV.put(KV_KEY_GRUPOS, JSON.stringify(list));
+      return jsonRes({ grupos: list });
     }
 
     // ── Todo lo demás → assets estáticos (index.html) ──────────────────────
