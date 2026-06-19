@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impackta · Control de Clientes Nuevos 2026</title>
+<style>
+  :root{
+    --bg:#f3f4f7; --bg-2:#eceef2; --card:#ffffff; --card-2:#fafbfc;
+    --ink:#101622; --ink-2:#3a4453; --muted:#6b7686; --faint:#9aa4b2;
+    --line:#e7e9ee; --line-2:#eef0f4;
+    --blue:#2f6bff; --blue-soft:#eaf0ff;
+    --green:#10884a; --green-soft:#e6f6ec;
+    --amber:#c47a06; --amber-soft:#fdf2dd;
+    --red:#d23048; --red-soft:#fdebed;
+    --gls:#ffcc00;
+    --tip-bg:#101622; --tip-fg:#fff;
+    --r:14px; --sh:0 1px 2px rgba(16,22,34,.04),0 4px 16px -8px rgba(16,22,34,.10);
+    --sh-lg:0 2px 4px rgba(16,22,34,.05),0 18px 40px -16px rgba(16,22,34,.18);
+    --ease:cubic-bezier(.16,1,.3,1);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#0c0e12; --bg-2:#13161c; --card:#15191f; --card-2:#1a1f27;
+    --ink:#e8edf3; --ink-2:#aeb7c2; --muted:#8a93a0; --faint:#646d79;
+    --line:#242a33; --line-2:#1e242c;
+    --blue:#5b8cff; --blue-soft:#1a2540;
+    --green:#3ad186; --green-soft:#10271c;
+    --amber:#f0b020; --amber-soft:#2c2110;
+    --red:#ff6b80; --red-soft:#2c1419;
+    --tip-bg:#272e38; --tip-fg:#f3f5f8;
+    --sh:0 1px 2px rgba(0,0,0,.3),0 4px 16px -8px rgba(0,0,0,.5);
+    --sh-lg:0 2px 4px rgba(0,0,0,.4),0 18px 40px -16px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.5;font-size:15px;
+       padding-bottom:60px;transition:background .25s var(--ease),color .25s var(--ease)}
+  .num{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+  a{color:inherit}
+
+  /* header */
+  header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 82%,transparent);
+         backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--line)}
+  .hd{display:flex;align-items:center;gap:16px;padding:14px 0}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0}
+  .mark{width:34px;height:34px;border-radius:9px;background:var(--ink);display:grid;place-items:center;flex:0 0 auto}
+  .mark::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--gls);box-shadow:0 0 0 3px rgba(255,204,0,.22)}
+  .brand h1{font-size:15.5px;font-weight:650;letter-spacing:-.01em;white-space:nowrap}
+  .brand span{display:block;font-size:11.5px;color:var(--muted);font-weight:450}
+  .hd-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.35}
+  .meta b{color:var(--ink-2);font-weight:600}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px}
+  .dot.snap{background:var(--amber)}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .icbtn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;
+         background:var(--card);box-shadow:inset 0 0 0 1px var(--line);transition:all .15s var(--ease)}
+  .icbtn:hover{background:var(--card-2)}
+  .icbtn svg{width:17px;height:17px}
+  .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;border-radius:10px;
+       background:var(--ink);color:var(--bg);font-size:13px;font-weight:560;transition:all .15s var(--ease);
+       box-shadow:0 1px 2px rgba(0,0,0,.18)}
+  [data-theme="dark"] .btn{background:var(--blue);color:#fff}
+  .btn:hover{transform:translateY(-1px)}
+  .btn[disabled]{opacity:.55;pointer-events:none}
+  .btn svg{width:15px;height:15px}
+  .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+  /* tabs */
+  .tabbar{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);
+          scrollbar-width:none;background:color-mix(in srgb,var(--bg) 82%,transparent)}
+  .tabbar::-webkit-scrollbar{display:none}
+  .tab{padding:13px 15px;font-size:13.5px;font-weight:540;color:var(--muted);white-space:nowrap;
+       border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px}
+  .tab:hover{color:var(--ink-2)}
+  .tab[aria-selected="true"]{color:var(--ink);border-color:var(--blue)}
+  .tab .n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+          padding:0 5px;border-radius:9px;background:var(--bg-2);font-size:10.5px;font-weight:650;margin-left:7px;color:var(--muted)}
+
+  /* filter bar */
+  .filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 0 0}
+  .pills{display:flex;gap:5px;background:var(--bg-2);padding:4px;border-radius:11px}
+  .pill{height:30px;padding:0 13px;border-radius:8px;font-size:12.5px;font-weight:540;color:var(--ink-2);transition:all .15s}
+  .pill[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+  .search{position:relative;margin-left:auto}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--faint)}
+  .search input{height:38px;width:230px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+       padding:0 12px 0 33px;font:inherit;font-size:13px;color:var(--ink);transition:border .15s,box-shadow .15s}
+  .search input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+  select.sel{height:36px;border-radius:9px;border:1px solid var(--line);background:var(--card);padding:0 30px 0 11px;
+       font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;appearance:none;
+       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%236b7686' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+       background-repeat:no-repeat;background-position:right 10px center}
+  select.sel:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+
+  /* banner */
+  .banner{margin-top:14px;padding:12px 15px;border-radius:12px;font-size:13px;display:none;align-items:flex-start;gap:10px;border:1px solid}
+  .banner.show{display:flex}
+  .banner.warn{background:var(--amber-soft);border-color:color-mix(in srgb,var(--amber) 40%,transparent);color:var(--amber)}
+  .banner.ok{background:var(--green-soft);border-color:color-mix(in srgb,var(--green) 40%,transparent);color:var(--green)}
+  .banner b{font-weight:650}
+  .banner button{margin-left:auto;color:inherit;opacity:.6;font-size:18px;line-height:1}
+
+  /* sections / panels */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .tabpanel{display:none;padding-top:20px}
+  .tabpanel.active{display:block;animation:fade .35s var(--ease)}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .blk{margin-top:20px}
+  .blk:first-child{margin-top:0}
+  .blkhd{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .eyebrow{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+  h2{font-size:17px;font-weight:650;letter-spacing:-.02em}
+  .blkhd .hint{font-size:12px;color:var(--muted)}
+
+  /* kpi cards */
+  .kpis{display:grid;gap:13px}
+  .kpis.k6{grid-template-columns:repeat(6,1fr)}
+  .kpis.k4{grid-template-columns:repeat(4,1fr)}
+  .kpis.k3{grid-template-columns:repeat(3,1fr)}
+  .kpis.k2{grid-template-columns:repeat(2,1fr)}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh);position:relative;overflow:hidden}
+  .kpi.accent::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue)}
+  .kpi .lab{font-size:12px;color:var(--muted);font-weight:520;display:flex;align-items:center;gap:6px}
+  .kpi .lab svg{width:14px;height:14px;color:var(--faint);flex:0 0 auto}
+  .kpi .val{font-size:30px;font-weight:680;letter-spacing:-.025em;margin-top:8px;line-height:1}
+  .kpi .val small{font-size:15px;font-weight:600;color:var(--muted)}
+  .kpi .sub{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .kpi .sub b{font-weight:640}
+  .c-blue{color:var(--blue)} .c-green{color:var(--green)} .c-amber{color:var(--amber)} .c-red{color:var(--red)}
+  .bg-blue{background:var(--blue)} .bg-green{background:var(--green)} .bg-amber{background:var(--amber)} .bg-red{background:var(--red)}
+
+  /* ranking */
+  .rank{padding:5px 4px}
+  .rrow{display:grid;grid-template-columns:1fr 60px 250px 92px;gap:14px;align-items:center;padding:10px 15px;border-radius:10px}
+  .rrow:hover{background:var(--card-2)}
+  .rrow+.rrow{border-top:1px solid var(--line-2)}
+  .rname .n{font-size:13px;font-weight:560;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rname .m{font-size:11px;color:var(--muted);margin-top:1px}
+  .rname .m .tariff{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;background:var(--bg-2);padding:1px 5px;border-radius:4px;color:var(--ink-2)}
+  .volchip{text-align:right;font-size:11px;color:var(--muted)}
+  .volchip b{display:block;font-size:13px;font-weight:650;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .track{position:relative;height:24px}
+  .track .base{position:absolute;inset:0;background:var(--bg-2);border-radius:7px}
+  .track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px;transition:width .6s var(--ease);min-width:3px}
+  .track .ref{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:2px;opacity:.5}
+  .track .reflab{position:absolute;top:-14px;font-size:9px;color:var(--ink-2);font-weight:600;transform:translateX(-50%);white-space:nowrap}
+  .track .vlab{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:620;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .pct{text-align:right}
+  .pct .p{font-size:15px;font-weight:680;letter-spacing:-.02em}
+  .pct .s{font-size:9.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);padding:12px 16px;border-top:1px solid var(--line-2)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  /* charts */
+  .chart-pad{padding:16px 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .legend-inline{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin:2px 0 6px;flex-wrap:wrap}
+  .legend-inline span{display:flex;align-items:center;gap:6px}
+  .ln{width:15px;height:0;border-top:2px solid}.ln.dash{border-top-style:dashed;border-color:var(--ink)}.ln.sol{border-color:var(--blue)}
+  svg .gl{stroke:var(--line-2);stroke-width:1}
+  svg .tk{fill:var(--faint);font-size:10px;font-family:var(--font)}
+  svg .axlab{fill:var(--muted);font-size:10px;font-weight:600;font-family:var(--font)}
+  .tip{position:fixed;pointer-events:none;z-index:60;background:var(--tip-bg);color:var(--tip-fg);font-size:11.5px;
+       padding:7px 10px;border-radius:8px;box-shadow:var(--sh-lg);opacity:0;transition:opacity .12s;max-width:230px;line-height:1.45}
+
+  /* tables */
+  .tbl-wrap{overflow-x:auto;border-radius:var(--r)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:680px}
+  thead th{text-align:left;font-size:10.5px;font-weight:620;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+        padding:11px 13px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  thead th.r{text-align:right}thead th.nc{cursor:default}
+  thead th:hover:not(.nc){color:var(--ink)}
+  thead th .ar{font-size:9px;margin-left:3px}
+  tbody td{padding:10px 13px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+  tbody td.r{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:var(--card-2)}
+  tbody td .cn{font-weight:560}
+  tfoot td{padding:11px 13px;border-top:2px solid var(--line);font-weight:680;font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--card-2)}
+  tfoot td.r{text-align:right}
+  .tag{display:inline-block;font-size:10px;font-weight:650;padding:2px 8px;border-radius:20px}
+  .tag.blue{background:var(--blue-soft);color:var(--blue)}.tag.green{background:var(--green-soft);color:var(--green)}
+  .tag.amber{background:var(--amber-soft);color:var(--amber)}.tag.red{background:var(--red-soft);color:var(--red)}
+  .tag.gray{background:var(--bg-2);color:var(--muted)}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink-2)}
+  .trend-up{color:var(--green);font-weight:700}.trend-dn{color:var(--red);font-weight:700}.trend-eq{color:var(--muted);font-weight:700}
+  .mini-bar{display:inline-block;vertical-align:middle;height:7px;border-radius:4px;background:var(--blue);margin-left:8px}
+
+  /* lists */
+  .lst{padding:5px 4px}
+  .lrow{display:flex;align-items:center;gap:12px;padding:11px 15px;border-radius:10px}
+  .lrow+.lrow{border-top:1px solid var(--line-2)}
+  .lrow:hover{background:var(--card-2)}
+  .lrow .info{min-width:0;flex:1}
+  .lrow .info .n{font-size:13px;font-weight:560;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow .info .m{font-size:11px;color:var(--muted)}
+  .lrow .right{text-align:right;flex:0 0 auto}
+
+  .foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);
+        display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .empty{padding:36px;text-align:center;color:var(--muted);font-size:13px}
+  /* clientes / bajas */
+  .bajabtn{height:28px;padding:0 12px;border-radius:8px;font-size:11.5px;font-weight:560;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);transition:all .15s var(--ease)}
+  .bajabtn:hover{background:var(--red-soft);color:var(--red);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--red) 40%,transparent)}
+  .bajabtn.on{color:var(--green)} .bajabtn.on:hover{background:var(--green-soft);color:var(--green);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 40%,transparent)}
+  tr.isbaja td:not(:last-child){opacity:.42}
+  .cfilter{display:flex;gap:5px;background:var(--bg-2);padding:4px;border-radius:11px}
+  .cfilter button{height:30px;padding:0 13px;border-radius:8px;font-size:12.5px;font-weight:540;color:var(--ink-2);transition:all .15s}
+  .cfilter button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+
+  @media (max-width:1040px){
+    .kpis.k6{grid-template-columns:repeat(3,1fr)} .kpis.k4{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+    .rrow{grid-template-columns:1fr 52px 150px 78px;gap:10px}
+  }
+  @media (max-width:620px){
+    .wrap{padding:0 14px}.meta{display:none}
+    .kpis.k6,.kpis.k4,.kpis.k3{grid-template-columns:1fr 1fr}.kpis.k2{grid-template-columns:1fr}
+    .kpi .val{font-size:25px}
+    .search{margin-left:0;width:100%}.search input{width:100%}
+    .rrow{grid-template-columns:1fr 70px}.track,.volchip{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media print{header{position:static}.hd-right,.filterbar,.tabbar,.banner{display:none!important}
+    .tabpanel{display:block!important}body{background:#fff}.panel,.kpi{box-shadow:none}}
+.grpico{display:inline-block;color:#185FA5;font-size:15px;line-height:1}
+.primbtn{height:30px;padding:0 14px;border-radius:8px;border:none;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer}
+.primbtn:disabled{opacity:.4;cursor:not-allowed}
+.selbox{width:16px;height:16px;cursor:pointer}
+tr.isgroup{background:var(--bg-2)}
+.grow{display:flex;gap:10px;padding:8px 15px;border-top:1px solid var(--line);font-size:12.5px;align-items:center}
+.grow.ghead2{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-top:none}
+.gbadge{background:var(--bg-2);border-radius:8px;padding:8px 13px;min-width:110px}
+.gblab{font-size:11px;color:var(--ink-2)}
+.gbval{font-size:18px;font-weight:600}
+.gmodal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:80}
+.gmodal{background:var(--card);border-radius:14px;padding:22px;width:360px;border:1px solid var(--line)}</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hd">
+      <div class="brand">
+        <div class="mark"></div>
+        <div><h1>Control de Clientes Nuevos</h1><span>Impackta · cumplimiento de compromiso · 2026</span></div>
+      </div>
+      <div class="hd-right">
+        <div class="meta"><div><span class="dot snap" id="srcdot"></span><b id="srctxt">Cargando…</b></div><div id="updtxt"></div></div>
+        <button class="icbtn" id="theme" aria-label="Cambiar tema" title="Modo claro / oscuro">
+          <svg id="themeic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
+        </button>
+        <button class="btn" id="refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+          Actualizar
+        </button>
+      </div>
+    </div>
+    <div class="tabbar" id="tabbar" role="tablist"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="filterbar" id="filterbar">
+    <div class="pills" id="comercialPills" role="group" aria-label="Filtrar por comercial"></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input type="text" id="search" placeholder="Buscar cliente…" autocomplete="off"></div>
+  </div>
+  <div class="banner" id="banner"><div id="banmsg"></div><button id="banx" aria-label="Cerrar">×</button></div>
+
+  <div id="panels"></div>
+
+  <div class="foot"><span>Impackta — Agencia oficial GLS · Panel operativo interno</span><span id="footinfo"></span></div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* ===== CONFIG ===== */
+const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
+const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
+CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
+CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
+CESIÓN,Área Cliente,Finalizado,26VACB,15,Judith,9046995001,50252,VAC BCN,RUBI,11,0,0,9,3,7,13,8,11,7,2,14,7,6,4,6,9,4,0,27,3,4,4,15,3,5,8,6,12,0,8,2,2,10,6,10,11,13,25,13,2,25,23,15,21,17,34,13,10,4,3,23,8,23,8,13,12,2,11,9,13,13,20,7,11,10,0,30,17,8,7,16,19,32,20,34,12,24,18,6,1,10,8,15,15,28,18,29,21,13,8,15,12,18,11,13,10,8,10,6,10,1,7,1,14,21,6,27,10,9,12,8,14,19,24,6
+CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,9057337001,50256,DUOMO EDICIONES,BARCELONA,0,0,41,4,6,16,11,5,17,2,0,4,167,6,38,20,14,7,9,4,39,26,23,38,3,12,4,5,14,4,18,5,6,46,4,17,4,13,6,12,4,8,5,20,3,20,2,45,7,5,6,31,21,31,21,20,7,12,5,33,26,34,18,19,6,8,5,56,12,33,1,4,7,4,9,3,2,45,25,3,4,12,25,7,34,6,23,40,4,44,7,7,25,10,48,13,58,1,17,7,0,136,49,15,7,9,7,13,18,23,10,27,77,48,17,11
+PROPIA,Área Cliente,Finalizado,N3S26Q,5,Judith,9058970001,50255,CANON BARCELONA 22@,BARCELONA,0,1,0,22,9,0,5,6,8,11,0,10,6,3,4,0,8,3,5,5,0,11,3,2,5,0,9,5,6,0,0,14,1,5,4,0,11,6,5,4,0,12,11,8,5,0,12,2,8,9,0,11,4,11,4,3,7,8,11,4,12,8,0,13,8,3,0,14,5,11,0,8,4,4,3,0,10,10,7,10,0,10,7,2,6,10,8,4,12,0,8,9,14,6,0,12,7,6,15,0,0,15,12,4,0,12,6,5,6,0,10,8,8,5,0,14
+PROPIA,Otros,Finalizado,N2S26Q,15,Judith,8327234001,70142,LEEOS MERCH,EL MASNOU,0,1,1,53,31,0,41,1,2,0,1,0,13,14,0,0,18,0,0,10,0,2,38,1,21,0,0,1,9,0,2,1,0,0,23,15,1,1,0,34,5,0,0,1,65,3,2,0,63,4,1,4,2,4,2,0,44,20,1,1,0,48,0,1,4,2,1,0,1,47,6,0,0,0,2,6,0,0,2,0,1,0,0,0,1,7,0,0,0,0,1,2,1,0,0,3,0,0,26,0,0,0,2,1,0,0,0,1,0,1,4,0,0,0,0,3
+APLI,Área Cliente,Finalizado,N2S26Q,10,Judith,8327235001,70141,DOME OF THE FIVE SL,MATARÓ,5,0,11,11,7,1,4,6,2,5,3,24,11,4,5,1,11,5,5,6,10,20,11,5,17,8,12,11,2,3,4,12,15,0,12,5,18,2,8,6,3,25,19,22,6,8,22,14,9,13,13,21,14,21,14,6,3,10,14,11,15,11,1,14,22,15,5,16,8,9,4,11,8,15,3,4,15,8,28,4,5,10,12,5,14,29,0,16,7,2,15,7,6,6,5,10,8,4,1,12,0,12,4,3,9,15,5,4,5,2,9,7,10,4,2,10
+APLI,,,N4126Q,5,Judith,8327236001,70143,TRUSA STUDIO SL,MATARÓ,0,0,0,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,1,0,0,4,5,5,2,0,10,4,3,12,9,1,1,1,6,1,0,0,8,0,0,7,18,9,0,2,0,22,5,0,0,4,0,4,0,0,2,1,2,2,0,4,0,0,0,0,1,1,0,1,0,2,4,1,0,0,0,2,1,0,0,0,0,0,3,1,0,0,1,0,2,1,0,0,0,0,1,1,1,0,0,0,4,0,0,2,0,0,1,0,0,0,0,1,0
+PROPIA,Otros,Cliente - inf. externo,N2126Q,10,Judith,9092802001,50258,NOVASONIX,LA ROCA DEL VALLES,0,0,1,7,11,6,13,6,9,16,4,12,11,2,15,12,11,15,6,12,4,6,9,16,5,14,29,4,14,7,13,17,32,18,8,2,14,8,13,13,13,8,16,25,11,4,13,10,20,19,9,2,13,2,13,16,11,8,8,2,12,12,6,16,16,6,0,19,17,3,5,2,24,8,20,11,15,16,6,19,10,11,12,7,20,17,8,16,14,9,23,17,7,12,9,9,10,28,14,5,13,7,10,4,6,4,17,16,9,6,16,13,22,15,11,15
+CESIÓN,Prestashop,Finalizado,N2126Q,25,Noelia,9183826001,50257,AT PROTECCION SL,BARCELONA,0,0,0,20,42,20,16,31,26,19,24,36,19,19,27,17,10,20,42,51,28,18,23,16,9,30,30,40,27,17,18,10,20,18,16,17,22,8,28,14,23,9,18,33,50,18,24,15,25,14,21,22,31,22,31,21,21,9,22,20,18,19,12,27,25,23,18,23,21,17,14,15,20,20,26,15,47,18,14,19,31,30,32,28,19,33,25,26,33,25,34,33,18,19,29,25,26,18,26,17,0,33,36,34,30,33,19,32,19,16,35,34,33,23,28,31
+50259,Área Cliente,Finalizado,N3S26Q,5,Judith,9183827001,50259,EUROPEA RECAMBIOS CARRETILLAS SL,MONTCADA I REIXAC,0,0,0,0,3,1,3,2,7,1,7,0,3,4,2,3,3,4,4,3,4,2,6,3,5,4,3,1,2,5,4,5,2,7,6,8,1,5,5,5,3,1,2,5,3,1,4,2,2,3,6,3,3,3,3,2,4,5,3,2,2,2,3,5,9,4,4,4,8,7,5,2,9,5,5,3,5,4,4,6,3,5,7,2,5,3,4,3,6,6,7,9,5,4,4,3,2,2,4,3,2,4,6,8,21,4,0,1,8,4,5,6,0,5,6,4
+APLI,,,N3S26Q,8,Judith,8327237001,70146,CPL AROMAS,VILASSAR DE DALT,0,0,3,46,5,7,11,1,7,8,6,5,4,3,7,0,7,9,7,11,4,8,7,7,9,5,7,9,7,8,6,8,2,5,13,7,10,3,6,47,4,9,11,3,7,4,8,5,6,8,6,8,7,8,7,5,7,7,5,8,14,9,8,8,5,10,4,4,11,9,2,9,9,9,12,6,3,51,9,5,3,10,7,8,2,3,5,6,0,7,3,12,11,7,1,3,3,9,3,5,3,8,9,7,8,11,14,7,12,4,6,11,6,2,7,4
+APLI,,,N3S26Q,8,Noelia,9114124001,50262,VALLES CATABAGS S.L,TERRASSA,0,0,0,0,0,0,6,0,0,9,17,3,9,5,0,1,0,4,3,1,0,1,0,0,0,0,0,0,1,0,5,6,0,2,0,5,0,0,6,0,0,0,0,8,17,0,0,2,0,6,1,0,0,0,0,0,7,2,0,3,0,5,0,2,3,8,0,0,12,0,8,8,5,2,2,0,8,1,8,0,0,5,0,7,11,2,8,2,0,0,11,1,5,6,0,5,0,0,7,0,0,0,13,22,0,2,7,7,7,0,9,0,11,1,0,11
+CESIÓN,Shopify,Finalizado,N1126Q,10,Judith,9183828001,50260,AMA HEALTH PRODUCTS SL,TERRASSA,45,0,16,36,34,16,27,31,15,9,6,9,2,38,36,5,8,5,101,17,3,45,42,13,24,8,25,9,19,1,22,29,14,18,11,7,25,19,25,17,11,31,22,10,8,18,5,20,10,27,3,25,12,9,9,8,8,12,18,9,13,8,14,31,17,7,9,40,9,2,16,17,80,53,18,8,44,14,11,11,29,22,15,30,12,62,35,21,17,13,40,5,17,35,13,24,6,6,19,6,34,10,23,27,18,26,10,42,13,10,42,13,20,14,10,27
+,,,N1126Q,7,Judith,9183828001,50263,LOGISERVICE EUROPE SL,TERRASSA,1,0,13,14,8,4,12,7,2,5,5,4,4,3,0,0,5,0,0,8,1,9,2,2,2,4,3,0,3,0,1,3,7,5,2,1,6,1,4,4,1,1,3,4,2,2,0,4,0,6,2,0,5,0,5,2,4,1,12,1,5,6,3,8,6,7,1,5,7,6,0,7,2,0,1,2,0,5,0,1,0,3,3,0,9,0,0,6,0,0,11,20,1,14,8,7,16,7,7,4,0,6,3,6,2,0,13,1,3,2,2,21,4,6,1,0
+APLI,,,26DECR,5,Judith,9183829001,50265,NEON PROFESSIONAL/DECREM,SABADELL,0,0,0,4,4,2,2,0,0,0,0,12,3,1,5,0,1,2,4,3,2,0,3,1,5,0,4,0,1,1,0,0,1,2,3,8,4,3,4,4,2,15,1,0,2,0,1,0,0,2,2,3,3,3,3,3,3,0,2,1,10,1,1,0,4,0,0,4,17,9,0,0,5,4,5,2,0,3,11,3,0,4,0,5,0,13,2,1,2,0,0,5,7,4,0,4,3,1,1,0,2,4,3,4,0,5,4,10,3,0,3,3,9,2,0,4
+APLI,,Finalizado,N1126Q,15,Judith,8327240001,70147,ADN SISTEMAS DE IDENTIFICACION SL,MATARÓ,0,0,0,11,6,7,18,18,2,4,17,3,5,9,4,7,14,8,11,10,12,10,4,10,11,12,6,5,14,5,18,8,12,14,6,13,5,7,11,11,10,12,5,6,16,13,3,11,9,6,7,21,6,21,6,12,8,9,8,16,12,14,4,17,10,13,0,11,6,13,6,14,1,21,17,16,14,9,6,7,2,18,5,9,2,20,9,17,26,5,26,9,6,17,8,7,5,5,14,15,0,19,19,16,14,12,27,7,11,4,15,20,11,17,10,5
+PROPIA,Área Cliente,Finalizado,26STOP,10,Noelia,,50266,DESGUACES STOP,BARBERA DEL VALLES,1,0,0,0,4,2,4,2,1,2,1,1,2,4,2,1,0,2,2,3,2,2,2,1,1,2,1,2,1,1,2,3,1,2,1,1,1,2,1,3,2,2,2,3,2
+APLI,Área Cliente,Finalizado,N4126Q,5,Noelia,8276146001,70148,ROSENDO MATEU,ARGENTONA,0,0,0,0,1,0,1,1,0,2,0,0,0,2,1,0,4,2,0,0,0,1,2,3,5,0,1,0,0,0,1,1,0,0,0,0,0,0,1,0,0,1,1,0,0,1,0,0,3,1,1,0,0,0,0,0,0,1,1,0,0,0,2,0,0,0,0,2,6,0,0,0,4,0,3,1,2,0,1,5,3,4,3,0,0,1,4,5,2,1,6,2,4,1,1,0,3,3,2,4,2,0,0,5,1,1,1,3,2,0,3,4,2,3,0,0
+PROPIA,,,N3126Q,3,Noelia,8327241001,70150,NOTYOURPROBLEM,MATARO,0,0,3,2,3,2,4,7,3,1,1,2,4,2,1,0,5,0,3,0,1,1,0,0,0,0,1,0,0,0,3,0,0,0,2,2,3,2,2,2,1,2,0,2,0,0,0,0,0,2,0,0,4,0,4,0,2,0,0,2,0,0,1,0,3,1,1,2,2,0,0,1,3,0,1,0,4,0,0,0,0,0,0,2,0,0,2,0,0,0,1,0,0,0,0,0,0,3,0,0,0,0,0,0,1,0,0,3,0,0,0,0,0,1,0,0
+,Shopify,Cliente,N3126Q,3,Noelia,8327241001,70149,RAMS 23,MATARO,0,0,2,0,0,2,1,5,2,0,6,0,2,0,0,0,0,4,0,4,1,0,0,0,0,0,0,5,0,0,7,0,2,6,5,1,3,2,1,4,1,0,0,4,0,5,0,0,0,4,0,0,2,0,2,0,1,0,3,3,0,2,1,0,3,0,0,2,2,0,0,7,5,1,14,0,2,7,2,0,0,4,6,0,1,0,0,0,1,0,1,0,3,0,3,2,0,1,1,1,0,4,2,4,2,1,1,3,0,2,13,1,3,0,2,2
+CESIÓN,,Finalizado,N1126Q,30,Noelia,9139436001,50268,CREACIONES Y DISTRIBUCIONES MIMARCA SL/ BABYBOL,RUBI,0,0,0,1,13,5,47,116,65,1,147,0,119,1,0,0,1,11,61,172,61,4,209,7,0,5,69,0,0,0,159,165,56,96,73,3,136,51,99,110,103,78,120,99,55,68,41,6,5,13,5,13,29,13,29,1,4,0,15,73,89,186,195,116,0,0,0,32,16,5,21,13,13,15,19,2,2,13,1,1,3,21,4,2,4,1,1,2,1,0,2,0,1,3,3,0,2,1,2,1,0,0,0,2,2,2,1,1,0,0,0,0,0,1,2,0
+CESIÓN,Área Cliente,Finalizado,26SAGF,25,Noelia,9152905001,50269,SATERGRAF  S.L,TERRASSA,,,,,,,,,,,,,,10,15,12,12,8,22,17,20,27,42,47,40,22,27,35,40,41,71,54,45,17,45,91,60,44,57,61,78,49,81,43,64,76,27,51,17,62,35,48,63,48,63,67,40,15,51,25,61,74,29,17,4,1,0,75,55,55,36,45,81,46,64,74,67,35,49,50,52,64,65,30,31,65,28,47,29,50,0,0,0,0,0,0,0
+CESIÓN,Shopify,Finalizado,N1126Q,15,Judith,9167321001,50271,KION HOME,GRANOLLERS,,,,,,,,,,,,,,,,,,,,,,,,19,15,15,57,7,15,27,12,49,17,22,15,22,53,5,9,22,16,31,12,17,10,8,40,21,12,17,16,51,15,51,15,21,12,26,23,19,13,14,4,40,18,13,8,62,9,11,36,29,22,15,29,12,56,11,35,17,20,36,33,11,6,56,13,18,14,22,72,11,23,26,8,29,8,16,21,15,20,33,21,5,14,36,14,16,16,12,50,19,15,9,17,23
+CESIÓN,Shopify,Finalizado,N1126Q,8,Judith,9178373001,50274,MAS UNIFORMES 10 SL,BARCELONA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+PROPIA,Área Cliente,Finalizado,N2126Q,20,Judith,9178374001,50272,SADI TRANSMISIONES SL,BARCELONA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,2,3,5,4,9,5,2,2,3,8,2,2,3,5,3,5,4,2,5,1,6,8,9,5,6,5,4,0,4,3,7,4,7,6,6,5,2,7,7,7,4,3,9,2,5,6,4,2,4,3,4,6,10,7,8,4,1,7,6,7,2,0,8,6,6,7,5,7,3,6,11,0,5,0,7,7,2
+APLI,,,N3126Q,7,Judith,9188697001,50282,FATRO IBERICA,SANT JUST DESVERN,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,0,0,0,0,0,0,0,0,4,16,1,6,0,0,0,5,0,5,0,8,9,4,1,7,22,1,2,6,3,7,4,2,0,2,2,0,13,4,7,14,15,0,10,4,10,3,31,3
+CESIÓN,Desk,Finalizado,N2126Q,6,Judith,9190133001,50267,SIESA,BARCELONA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,4,7,6,10,6,11,6,6,6,5,10,17,8,5,3,12,5,5,10,10,5,7,4,4,9,6,8,4,5,0,11,16,9,3,6,6,9,15,9,12,8,10,10,11,7
+CESIÓN,,,N2126Q,10,Noelia,8337357001,50284,ESPADIET S.L,GRANOLLERS,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11,17,10,10,0,8,10,10,11,14,7,8,13,8,21,9,14,14,10,10,11,9,8,9,6,14
+PROPIA,Shopify,Finalizado,N2126Q,15,Judith,9207258001,50278,DESIDERATA BARCELONA,BARCELONA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,3,12,20,17,7,6,8,5,1,10,8,8,29,7,10,17,2,22,10,8,7,8,11
+CESIÓN,,,N2126Q,15,Judith,8339729001,70154,BLOOVS,MATARÓ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,23,14,1,16,5,4,6,11,6,4,5,2,5,1
+APLI,,,N3126Q,6,Judith,9214826001,50285,TOT AGRO ,SANT CUGAT DEL VALLES,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,11,0,5,6,1,7,3,5,4,2,9
+CESIÓN,,,N1126Q,40,Noelia,9219952001,50287,CHARLY THERAPY,BARCELONA,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,104,54,71,44,40,153`;
+
+/* ===== CSV ===== */
+function parseCSV(t){const rows=[];let row=[],cur="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+  else{if(c==='"')q=true;else if(c===','){row.push(cur);cur=""}else if(c==='\n'){row.push(cur);rows.push(row);row=[];cur=""}else if(c==='\r'){}else cur+=c}}
+  if(cur!==""||row.length){row.push(cur);rows.push(row)}return rows.filter(r=>r.length>1)}
+const norm=s=>(s||"").trim().toUpperCase();
+const findCol=(h,ns)=>{for(const n of ns){const i=h.findIndex(x=>norm(x)===norm(n));if(i>=0)return i}return -1};
+function isoWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=(dt.getUTCDay()+6)%7;dt.setUTCDate(dt.getUTCDate()-dn+3);const ft=new Date(Date.UTC(dt.getUTCFullYear(),0,4));return dt.getUTCFullYear()*100+(1+Math.round(((dt-ft)/864e5-3+((ft.getUTCDay()+6)%7))/7))}
+function mondayOf(d){const x=new Date(d);const dn=(x.getDay()+6)%7;x.setDate(x.getDate()-dn);return x}
+function statusOf(p){if(p==null)return{cls:"",label:"Sin dato",tag:"gray"};if(p>=130)return{cls:"blue",label:"Supera",tag:"blue"};if(p>=90)return{cls:"green",label:"Cumple",tag:"green"};if(p>=65)return{cls:"amber",label:"En riesgo",tag:"amber"};return{cls:"red",label:"No cumple",tag:"red"}}
+
+/* ===== TRANSFORM ===== */
+let MODEL=null;
+function transform(rows){
+  const H=rows[0];let dateIdx=[],dates=[];
+  H.forEach((h,i)=>{const m=String(h).trim().match(/^(\d{1,2})\/(\d{1,2})$/);if(m){dateIdx.push(i);dates.push(new Date(YEAR,+m[2]-1,+m[1]))}});
+  // Recortar el eje al ÚLTIMO día con datos reales: el Sheet trae columnas de días futuros aún vacías
+  let lastReal=-1;
+  for(let r=1;r<rows.length;r++){const row=rows[r];for(let j=0;j<dateIdx.length;j++){if(/^-?\d+$/.test((row[dateIdx[j]]||"").trim())&&j>lastReal)lastReal=j}}
+  if(lastReal>=0){dateIdx=dateIdx.slice(0,lastReal+1);dates=dates.slice(0,lastReal+1)}
+  const C={cli:findCol(H,["CLIENTE"]),comp:(findCol(H,["COMPROMISO"])>=0?findCol(H,["COMPROMISO"]):findCol(H,["TARIFA"])+1),tar:findCol(H,["TARIFA"]),com:findCol(H,["COMERCIAL"]),pob:findCol(H,["POBLACIÓN","POBLACION"]),integ:findCol(H,["INTEGRACIÓN","INTEGRACION"]),cod:findCol(H,["COD.CLIENTE","COD CLIENTE"])};
+  const N=dateIdx.length;
+  const weekKeys=dates.map(isoWeek), uWeeks=[...new Set(weekKeys)];
+  const clients=[];
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];if(C.cli<0)break;const name=(row[C.cli]||"").trim();if(!name)continue;
+    const aligned=dateIdx.map(i=>{const v=(row[i]||"").trim();return /^-?\d+$/.test(v)?+v:null});
+    const nn=aligned.map((v,i)=>v!=null?i:-1).filter(i=>i>=0);const hasData=nn.length>0;
+    const f=hasData?nn[0]:0,l=hasData?nn[nn.length-1]:-1;
+    const win=hasData?aligned.slice(f,l+1).map(v=>v==null?0:v):[], winD=hasData?dates.slice(f,l+1):[];
+    const total=win.reduce((a,b)=>a+b,0),dias=win.length,conEnvio=win.filter(v=>v>0).length;
+    const cr=(row[C.comp]||"").trim().replace(",",".").replace(/[^\d.]/g,""),comp=(cr!==""&&!isNaN(parseFloat(cr)))?Math.round(parseFloat(cr)):null;
+    const mediaDia=dias?total/dias:0,cumpl=!hasData?null:(comp?Math.round(mediaDia/comp*100):null);
+    const deficit=!hasData?null:(comp!=null?total-comp*dias:null);
+    let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
+    const wm=new Map();for(let i=0;i<win.length;i++){const k=isoWeek(winD[i]);const e=wm.get(k)||{sum:0,dias:0,date:mondayOf(winD[i])};e.sum+=win[i];e.dias++;wm.set(k,e)}
+    const weekly=[...wm.values()];
+    const wkClosed=(weekly.length&&weekly.at(-1).dias<4)?weekly.slice(0,-1):weekly;
+    const ws=wkClosed.map(w=>w.sum),a=ws.slice(-3),b=ws.slice(-6,-3);
+    const ma=a.length?a.reduce((x,y)=>x+y,0)/a.length:0,mb=b.length?b.reduce((x,y)=>x+y,0)/b.length:0;
+    const tval=!b.length?0:(mb===0?(ma>0?1:0):(ma-mb)/mb), tSym=!b.length?"=":(tval>0.1?"↑":tval<-0.1?"↓":"=");
+    let wow=null;if(wkClosed.length>=2){const cw=wkClosed.at(-1),pw=wkClosed.at(-2);if(pw.sum>0)wow=(cw.sum-pw.sum)/pw.sum}
+    let ttc=null;if(comp!=null)for(let i=0;i<win.length;i++){if(win[i]>=comp){ttc=i;break}}
+    let lastShip=-1;for(let i=win.length-1;i>=0;i--){if(win[i]>0){lastShip=i;break}}
+    const gapEnd=(N-1-l)+(win.length-1-lastShip);
+    clients.push({name,comp,cumpl,cod:(row[C.cod]||"").trim(),tarifa:(row[C.tar]||"").trim()||"—",comercial:(row[C.com]||"").trim()||"—",
+      poblacion:(row[C.pob]||"").trim(),total,dias,conEnvio,mediaDia:+mediaDia.toFixed(1),mediaSem:+(mediaDia*5).toFixed(1),
+      deficit,racha,tSym,tval,wow,ttc,gapEnd,altaIdx:hasData?f:-1,altaDate:hasData?dates[f]:null,ramp:win.slice(),weekly,status:statusOf(cumpl)});
+  }
+  return {dates,N,clients,...aggregate(clients,dates)};
+}
+// agrega series globales (envíos/día, semana, mes, WoW, MoM) para un subconjunto de clientes
+function aggregate(cls,dates){
+  const perDay=dates.map(()=>0);
+  cls.forEach(c=>{for(let i=0;i<c.ramp.length;i++)perDay[c.altaIdx+i]+=c.ramp[i]});
+  const gwMap=new Map();dates.forEach((d,i)=>{const k=isoWeek(d);const e=gwMap.get(k)||{sum:0,dias:0,date:mondayOf(d)};e.sum+=perDay[i];e.dias++;gwMap.set(k,e)});
+  const gWeeks=[...gwMap.values()];
+  const gmMap=new Map();dates.forEach((d,i)=>{const k=d.getMonth();gmMap.set(k,(gmMap.get(k)||0)+perDay[i])});
+  const gMonths=[...gmMap.entries()].sort((a,b)=>a[0]-b[0]);
+  const closedW=gWeeks.filter((w,i)=>i<gWeeks.length-1||w.dias>=4);
+  let wowG=null;if(closedW.length>=2)wowG=(closedW.at(-1).sum-closedW.at(-2).sum)/closedW.at(-2).sum*100;
+  let momG=null,momRange=null;
+  if(dates.length){const anchor=dates.at(-1);const m1=new Date(anchor);m1.setMonth(m1.getMonth()-1);const m2=new Date(anchor);m2.setMonth(m2.getMonth()-2);let curS=0,prevS=0;dates.forEach((d,i)=>{if(d>m1&&d<=anchor)curS+=perDay[i];else if(d>m2&&d<=m1)prevS+=perDay[i];});if(prevS>0)momG=(curS-prevS)/prevS*100;const fmtD=x=>x.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"});momRange=fmtD(m1)+" al "+fmtD(anchor)+" vs "+fmtD(m2)+" al "+fmtD(m1);}
+  return {perDay,gWeeks,gMonths,wowG,momG,momRange};
+}
+
+/* ===== STATE ===== */
+let SRC="snapshot",UPDATED=null;
+const state={tab:"resumen",comercial:"Todos",q:"",sortRank:"cumpl_asc",tableSort:{},trendClient:null,clientesFilter:"all"};
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const fmt=n=>Math.round(n).toLocaleString("es-ES");
+const fmt1=n=>n.toLocaleString("es-ES",{maximumFractionDigits:1});
+const pctSign=n=>n==null?"—":(n>0?"+":"")+Math.round(n)+"%";
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+/* ===== BAJAS (clientes dados de baja) — compartidas vía Cloudflare KV, con respaldo local ===== */
+let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";let GRUPOS=[], GRUPOS_SRC="local";let SEL={};   // "kv" si las lee del backend compartido
+const keyOf=c=>c.cod||c.name;
+const isBaja=c=>BAJAS.has(keyOf(c));const isNuevo=c=>NUEVOS.has(keyOf(c));
+function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}catch(e){NUEVOS_SRC="local"}}
+function loadBajasLocal(){try{const r=localStorage.getItem("impackta-bajas");if(r)BAJAS=new Set(JSON.parse(r))}catch(e){}}
+async function syncBajasFromKV(){   // intenta leer la lista compartida; si no hay backend, se queda en local
+  try{const r=await fetch(API_BAJAS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();
+    BAJAS=new Set(j.bajas||[]);BAJAS_SRC="kv";saveLocal();renderAll();}
+  catch(e){BAJAS_SRC="local"}
+}
+async function toggleBaja(k){   // optimista: cambia ya en pantalla y lo confirma contra el KV
+  if(BAJAS.has(k))BAJAS.delete(k);else BAJAS.add(k);
+  saveLocal();renderAll();
+  try{const r=await fetch(API_BAJAS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});
+    if(r.ok){const j=await r.json();BAJAS=new Set(j.bajas||[]);BAJAS_SRC="kv";saveLocal();renderAll();}}
+  catch(e){/* sin backend: queda guardado en este navegador */}
+}
+// fcAll = filtro comercial+búsqueda incluyendo bajas (para total de envíos y gestión)
+/* ===== GRUPOS (cuentas agrupadas) ===== */
+function groupedKeys(){const s=new Set();GRUPOS.forEach(g=>(g.miembros||[]).forEach(k=>s.add(String(k))));return s;}
+function buildGroupClient(g){
+  const mk=(g.miembros||[]).map(String);
+  const members=MODEL.clients.filter(c=>mk.includes(String(keyOf(c))));
+  if(!members.length)return null;
+  const N=MODEL.N,dates=MODEL.dates,axis=new Array(N).fill(null);
+  let compSum=0,hasComp=false;
+  members.forEach(m=>{if(m.comp!=null){compSum+=m.comp;hasComp=true;}for(let i=0;i<m.ramp.length;i++){const idx=m.altaIdx+i;if(idx>=0&&idx<N)axis[idx]=(axis[idx]==null?0:axis[idx])+m.ramp[i];}});
+  const comp=hasComp?compSum:null;
+  const nn=axis.map((v,i)=>v!=null?i:-1).filter(i=>i>=0),hasData=nn.length>0;
+  const f=hasData?nn[0]:0,l=hasData?nn[nn.length-1]:-1;
+  const win=hasData?axis.slice(f,l+1).map(v=>v==null?0:v):[],winD=hasData?dates.slice(f,l+1):[];
+  const total=win.reduce((a,b)=>a+b,0),dias=win.length,conEnvio=win.filter(v=>v>0).length;
+  const mediaDia=dias?total/dias:0,cumpl=!hasData?null:(comp?Math.round(mediaDia/comp*100):null);
+  const deficit=!hasData?null:(comp!=null?total-comp*dias:null);
+  let racha=0;if(comp!=null)for(let i=win.length-1;i>=0;i--){if(win[i]<comp)racha++;else break}
+  const wm=new Map();for(let i=0;i<win.length;i++){const k=isoWeek(winD[i]);const e=wm.get(k)||{sum:0,dias:0,date:mondayOf(winD[i])};e.sum+=win[i];e.dias++;wm.set(k,e)}
+  const weekly=[...wm.values()];
+  const wkClosed=(weekly.length&&weekly.at(-1).dias<4)?weekly.slice(0,-1):weekly;
+  const ws=wkClosed.map(w=>w.sum),a=ws.slice(-3),b=ws.slice(-6,-3);
+  const ma=a.length?a.reduce((x,y)=>x+y,0)/a.length:0,mb=b.length?b.reduce((x,y)=>x+y,0)/b.length:0;
+  const tval=!b.length?0:(mb===0?(ma>0?1:0):(ma-mb)/mb),tSym=!b.length?"=":(tval>0.1?"↑":tval<-0.1?"↓":"=");
+  let wow=null;if(wkClosed.length>=2){const cw=wkClosed.at(-1),pw=wkClosed.at(-2);if(pw.sum>0)wow=(cw.sum-pw.sum)/pw.sum}
+  let ttc=null;if(comp!=null)for(let i=0;i<win.length;i++){if(win[i]>=comp){ttc=i;break}}
+  let lastShip=-1;for(let i=win.length-1;i>=0;i--){if(win[i]>0){lastShip=i;break}}
+  const gapEnd=(N-1-l)+(win.length-1-lastShip);
+  const coms=[...new Set(members.map(m=>m.comercial))],tars=[...new Set(members.map(m=>m.tarifa))];
+  return {name:g.nombre,isGroup:true,members,miembros:mk,comp,cumpl,cod:"",tarifa:tars.length===1?tars[0]:"Varios",comercial:coms.length===1?coms[0]:"Varios",poblacion:"",total,dias,conEnvio,mediaDia:+mediaDia.toFixed(1),mediaSem:+(mediaDia*5).toFixed(1),deficit,racha,tSym,tval,wow,ttc,gapEnd,altaIdx:hasData?f:-1,altaDate:hasData?dates[f]:null,ramp:win.slice(),weekly,status:statusOf(cumpl)};
+}
+function collapsedClients(){
+  if(!MODEL)return [];
+  if(!GRUPOS.length)return MODEL.clients.slice();
+  const gk=groupedKeys();
+  const indiv=MODEL.clients.filter(c=>!gk.has(String(keyOf(c))));
+  const grp=GRUPOS.map((g,i)=>{const c=buildGroupClient(g);if(c)c.gidx=i;return c;}).filter(Boolean);
+  return indiv.concat(grp);
+}
+async function syncGruposFromKV(){try{const r=await fetch(API_GRUPOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();GRUPOS=Array.isArray(j.grupos)?j.grupos:[];GRUPOS_SRC="kv";renderAll();}catch(e){GRUPOS_SRC="local"}}
+async function saveGruposKV(){try{await fetch(API_GRUPOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"set",grupos:GRUPOS})});}catch(e){}}
+function commonGroupName(ns){if(!ns.length)return"Grupo nuevo";const f=ns[0].split(" ")[0].replace(/[^A-Za-z0-9]/g,"");const all=ns.every(n=>n.toUpperCase().indexOf(f.toUpperCase())===0);return all&&f.length>1?"Grupo "+f:"Grupo nuevo";}
+function createGroup(nombre){const keys=Object.keys(SEL).filter(k=>SEL[k]);if(keys.length<2)return;GRUPOS.push({nombre:(nombre||"Grupo nuevo").trim()||"Grupo nuevo",miembros:keys});SEL={};state.agruparModal=false;state.clientesFilter="grp";saveGruposKV();renderActive();}
+function ungroupGroup(i){if(i>=0&&i<GRUPOS.length){GRUPOS.splice(i,1);saveGruposKV();renderActive();}}
+function renderAgruparModal(){
+  const keys=Object.keys(SEL).filter(k=>SEL[k]);const names=[];
+  MODEL.clients.forEach(c=>{if(keys.includes(String(keyOf(c))))names.push(c.name);});
+  const def=commonGroupName(names);
+  return `<div class="gmodal-ov"><div class="gmodal"><div style="font-size:16px;font-weight:600;margin-bottom:5px">Nombrar grupo</div><div style="font-size:12px;color:var(--muted);margin-bottom:14px">Se agruparán ${names.length} cuentas: ${names.map(esc).join(", ")}</div><input id="gname" type="text" value="${esc(def)}" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit"><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="bajabtn" data-grupo-cancel>Cancelar</button><button class="primbtn" data-grupo-crear>Crear grupo</button></div></div></div>`;
+}
+function renderGruposBody(){
+  const grp=fcAll().filter(c=>c.isGroup);
+  if(!grp.length)return '<div class="panel" style="padding:24px;text-align:center;color:var(--muted)">Aún no hay grupos. Ve a "Activos", marca 2+ cuentas y pulsa Agrupar.</div>';
+  return grp.map(g=>{
+    const e=g.status;
+    const memHead=`<div class="grow ghead2"><span style="flex:1">Empresa</span><span style="width:150px">Comercial · Tarifa</span><span style="width:64px;text-align:right">Total</span><span style="width:60px;text-align:right">Cumpl.</span></div>`;
+    const mems=g.members.map(m=>{const cu=m.comp==null?'<span class="tag gray">Sin comp.</span>':(m.cumpl==null?'s/d':`<b class="c-${m.status.cls||''}">${m.cumpl}%</b>`);return `<div class="grow"><span style="flex:1">${esc(m.name)}</span><span style="width:150px;color:var(--muted);font-size:11.5px">${esc(m.comercial)} · ${esc(m.tarifa)}</span><span style="width:64px;text-align:right">${fmt(m.total)}</span><span style="width:60px;text-align:right">${cu}</span></div>`;}).join("");
+    return `<div class="panel" style="margin-bottom:14px"><div style="padding:13px 15px;border-bottom:1px solid var(--line)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><span class="grpico">◉</span><h2 style="font-size:15px;margin:0">${esc(g.name)}</h2><span class="tag ${e.tag||"blue"}">${e.label} como grupo</span><button class="bajabtn" style="margin-left:auto" data-ungroup="${g.gidx}">Deshacer</button></div><div style="display:flex;gap:10px;flex-wrap:wrap"><div class="gbadge"><div class="gblab">Total envíos</div><div class="gbval">${fmt(g.total)}</div></div><div class="gbadge"><div class="gblab">Compromiso/día</div><div class="gbval">${g.comp==null?"—":fmt(g.comp)}</div></div><div class="gbadge"><div class="gblab">Cumplimiento</div><div class="gbval">${g.cumpl==null?"—":g.cumpl+"%"}</div></div></div></div>${memHead}${mems}</div>`;
+  }).join("");
+}
+function fcAll(){let d=collapsedClients();if(state.comercial!=="Todos")d=d.filter(x=>x.comercial===state.comercial);
+  if(state.q){const q=state.q.toLowerCase();d=d.filter(x=>x.name.toLowerCase().includes(q)||x.poblacion.toLowerCase().includes(q))}return d}
+// fc = solo activos (excluye bajas) — base de TODAS las métricas evaluativas
+function fc(){return fcAll().filter(c=>!isBaja(c)&&!isNuevo(c))}
+
+/* ===== SORTABLE TABLE ===== */
+// cols: [{k,label,align:'r'|'',val:(r)=>sortValue,cell:(r)=>html,defDir:1|-1,sortable:false?}]
+function makeTable(tid,cols,rows,{foot=null,def=null,rowClass=null}={}){
+  if(!state.tableSort[tid])state.tableSort[tid]=def?{...def}:{k:cols[0].k,dir:cols[0].defDir??-1};
+  const st=state.tableSort[tid], col=cols.find(c=>c.k===st.k)||cols[0];
+  const sorted=rows.slice().sort((a,b)=>{
+    let va=col.val(a),vb=col.val(b);
+    const na=(va==null||va!==va),nb=(vb==null||vb!==vb); // null o NaN siempre al final
+    if(na&&nb)return 0; if(na)return 1; if(nb)return -1;
+    if(typeof va==="string"||typeof vb==="string")return String(va).localeCompare(String(vb))*st.dir;
+    return (va-vb)*st.dir;
+  });
+  const thead=cols.map(c=>{const active=c.k===st.k, sortable=c.sortable!==false;
+    const cls=(c.align==="r"?"r":"")+(sortable?"":" nc");
+    const attrs=sortable?`data-tid="${tid}" data-k="${c.k}" data-dd="${c.defDir??-1}"`:"";
+    return `<th class="${cls}" ${attrs}>${c.label}${active?`<span class="ar">${st.dir>0?"▲":"▼"}</span>`:""}</th>`}).join("");
+  const tbody=sorted.map(r=>`<tr class="${rowClass?rowClass(r):""}">${cols.map(c=>`<td class="${c.align==="r"?"r":""}">${c.cell(r)}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${cols.length}" class="empty">Sin datos</td></tr>`;
+  return `<div class="tbl-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody>${foot?`<tfoot><tr>${foot}</tr></tfoot>`:""}</table></div>`;
+}
+
+/* ===== CHART HELPERS (SVG) ===== */
+const COL={blue:"#3b82f6",green:"#22a565",amber:"#e0a106",red:"#ef4452"};
+const cssCol={blue:"var(--blue)",green:"var(--green)",amber:"var(--amber)",red:"var(--red)"};
+function lineChart(series,{W=560,H=220,ref=null,refLabel="",color="#3b82f6",fillId="lg"}={}){
+  const P={l:38,r:14,t:14,b:26};if(!series.length)return `<div class="empty">Sin datos</div>`;
+  const max=Math.max(...series.map(p=>p.v),ref||0,1)*1.12;
+  const ix=i=>P.l+(series.length<=1?0:i/(series.length-1))*(W-P.l-P.r);
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const path=series.map((p,i)=>`${i?"L":"M"}${ix(i).toFixed(1)} ${iy(p.v).toFixed(1)}`).join(" ");
+  const area=`${path} L${ix(series.length-1).toFixed(1)} ${iy(0)} L${ix(0).toFixed(1)} ${iy(0)} Z`;
+  const yt=4,yl=Array.from({length:yt+1},(_,i)=>{const v=max/yt*i;return{v,y:iy(v)}});
+  const ev=Math.ceil(series.length/8);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">
+    <defs><linearGradient id="${fillId}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".18"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${yl.map(t=>`<line class="gl" x1="${P.l}" x2="${W-P.r}" y1="${t.y.toFixed(1)}" y2="${t.y.toFixed(1)}"/><text class="tk" x="${P.l-6}" y="${(t.y+3).toFixed(1)}" text-anchor="end">${fmt(t.v)}</text>`).join("")}
+    ${ref!=null?`<line x1="${P.l}" x2="${W-P.r}" y1="${iy(ref).toFixed(1)}" y2="${iy(ref).toFixed(1)}" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="5 4" opacity=".6"/><text class="tk" x="${W-P.r}" y="${(iy(ref)-4).toFixed(1)}" text-anchor="end">${esc(refLabel)}</text>`:""}
+    <path d="${area}" fill="url(#${fillId})"/><path d="${path}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${series.map((p,i)=>`<circle cx="${ix(i).toFixed(1)}" cy="${iy(p.v).toFixed(1)}" r="3" fill="var(--card)" stroke="${color}" stroke-width="2" data-tip="${esc(p.label)}<br><b>${fmt(p.v)} envíos</b>${ref!=null?` · obj. ${fmt(ref)}`:""}"/>`).join("")}
+    ${series.map((p,i)=>i%ev===0?`<text class="tk" x="${ix(i).toFixed(1)}" y="${H-8}" text-anchor="middle">${p.x}</text>`:"").join("")}
+  </svg>`;
+}
+function barChart(items,{W=560,H=220,color="#3b82f6"}={}){
+  const P={l:38,r:14,t:12,b:26};if(!items.length)return `<div class="empty">Sin datos</div>`;
+  const max=Math.max(...items.map(d=>d.v),1)*1.1, bw=(W-P.l-P.r)/items.length;
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const yt=4,yl=Array.from({length:yt+1},(_,i)=>{const v=max/yt*i;return{v,y:iy(v)}});
+  const ev=Math.ceil(items.length/10);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">
+    ${yl.map(t=>`<line class="gl" x1="${P.l}" x2="${W-P.r}" y1="${t.y.toFixed(1)}" y2="${t.y.toFixed(1)}"/><text class="tk" x="${P.l-6}" y="${(t.y+3).toFixed(1)}" text-anchor="end">${fmt(t.v)}</text>`).join("")}
+    ${items.map((d,i)=>{const x=P.l+i*bw+bw*0.16,w=bw*0.68,y=iy(d.v);return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(H-P.b-y).toFixed(1)}" rx="3" fill="${color}" data-tip="${esc(d.label)}<br><b>${fmt(d.v)} envíos</b>"/>`+(i%ev===0?`<text class="tk" x="${(x+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${d.x}</text>`:"")}).join("")}
+  </svg>`;
+}
+
+/* ===== TOOLTIP ===== */
+const tip=$("#tip");
+function bindTips(scope){scope.querySelectorAll("[data-tip]").forEach(n=>{
+  n.addEventListener("mouseenter",()=>{tip.innerHTML=n.getAttribute("data-tip");tip.style.opacity="1"});
+  n.addEventListener("mousemove",e=>{tip.style.left=Math.min(e.clientX+14,innerWidth-tip.offsetWidth-10)+"px";tip.style.top=Math.min(e.clientY+14,innerHeight-tip.offsetHeight-10)+"px"});
+  n.addEventListener("mouseleave",()=>tip.style.opacity="0")})}
+
+/* ===== TABS DEF ===== */
+const TABS=[
+  {id:"resumen",label:"Resumen"},
+  {id:"volumen",label:"Volumen y actividad"},
+  {id:"cumplimiento",label:"Cumplimiento"},
+  {id:"tendencia",label:"Tendencia y dinámica"},
+  {id:"segmentacion",label:"Segmentación"},
+  {id:"altas",label:"Altas y cartera"},
+  {id:"clientes",label:"Clientes y bajas"},
+];
+function kpiCard(c){return `<div class="kpi${c.accent?' accent':''}">
+  <div class="lab">${c.ic?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${c.ic}</svg>`:""}${c.lab}</div>
+  <div class="val ${c.cls||''}">${c.val}</div><div class="sub">${c.sub||""}</div></div>`}
+const IC={users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>',check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>',
+  box:'<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+  trend:'<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'}
+
+/* ===== RENDER: per tab ===== */
+function renderResumen(){
+  const d=fc(),wc=d.filter(x=>x.comp!=null);
+  const totAll=fcAll().reduce((a,b)=>a+b.total,0);              // incluye bajas (histórico)
+  const totAct=d.reduce((a,b)=>a+b.total,0),act=d.filter(x=>x.conEnvio>=1).length;
+  const mediaCD=act?totAct/(act*MODEL.N):0;
+  const ag=aggregate(d,MODEL.dates);
+  const nBaja=fcAll().length-d.length;
+  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.cumpl<90).length;
+  const pct=wc.length?Math.round(cumplen/wc.length*100):0;
+  const wSeries=MODEL.gWeeks.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})}));
+  const worst=wc.slice().sort((a,b)=>a.deficit-b.deficit).slice(0,5);
+  const cards=[
+    {ic:IC.box,lab:"Envíos totales",val:fmt(totAll),sub:nBaja?`incluye ${nBaja} de baja`:"periodo 2026 cargado"},
+    {ic:IC.users,lab:"Clientes activos",val:fmt(act),sub:`${wc.length} con compromiso${GRUPOS.length?` · incluye ${GRUPOS.length} grupo${GRUPOS.length>1?"s":""} (${GRUPOS.reduce((a,g)=>a+(g.miembros?g.miembros.length:0),0)} empresas)`:""}`},
+    {ic:IC.chart,accent:true,lab:"Media env/cliente/día",val:fmt1(mediaCD),sub:"solo clientes activos"},
+    {ic:IC.check,lab:"Cartera en cumplimiento",val:`${pct}<small>%</small>`,cls:pct>=60?"c-green":pct>=35?"c-amber":"c-red",sub:`<b>${cumplen}</b> de ${wc.length} cumplen`},
+    {ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",sub:"por debajo del 90%"},
+    {ic:IC.trend,lab:"Variación semanal",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada (WoW)"},
+  ];
+  return `<div class="kpis k6">${cards.map(kpiCard).join("")}</div>
+  <div class="blk grid2">
+    <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Actividad</span><h2 style="font-size:14px">Envíos por semana</h2></div>${lineChart(wSeries,{color:COL.blue,fillId:"rg1"})}</div></div>
+    <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:8px"><span class="eyebrow">Atención</span><h2 style="font-size:14px">Mayor déficit acumulado</h2></div>
+      <div class="lst" style="padding:0">${worst.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · compromiso ${c.comp}/día</div></div><div class="right"><div class="c-red" style="font-weight:700;font-size:15px">${fmt(c.deficit)}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.cumpl}% cumpl.</div></div></div>`).join("")||'<div class="empty">Sin datos</div>'}</div>
+    </div></div>
+  </div>`;
+}
+function renderVolumen(){
+  const d=fc();const totAll=fcAll().reduce((a,b)=>a+b.total,0);
+  const totAct=d.reduce((a,b)=>a+b.total,0),act=d.filter(x=>x.conEnvio>=1).length;
+  const mediaCD=act?totAct/(act*MODEL.N):0;
+  const daySeries=MODEL.dates.map((dt,i)=>({v:MODEL.perDay[i],x:dt.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:dt.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})}));
+  const wSeries=MODEL.gWeeks.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})}));
+  const cards=[
+    {ic:IC.box,lab:"Envíos totales",val:fmt(totAll),sub:"Σ del periodo (incluye bajas)"},
+    {ic:IC.chart,accent:true,lab:"Media env/cliente/día",val:fmt1(mediaCD),sub:`${fmt(totAct)} ÷ (${act} activos × ${MODEL.N} días)`},
+    {ic:IC.users,lab:"Clientes activos",val:fmt(act),sub:"con ≥1 envío · sin bajas"},
+  ];
+  return `<div class="kpis k3">${cards.map(kpiCard).join("")}</div>
+  <div class="blk panel"><div class="chart-pad"><div class="blkhd"><span class="eyebrow">Serie diaria</span><h2>Envíos por día — toda la cartera</h2></div>${lineChart(daySeries,{W:1100,H:240,color:COL.blue,fillId:"vd"})}</div></div>
+  <div class="blk panel"><div class="chart-pad"><div class="blkhd"><span class="eyebrow">Serie semanal</span><h2>Envíos por semana</h2></div>${barChart(wSeries,{W:1100,H:240,color:COL.green})}</div></div>`;
+}
+function sortRank(d){const s=state.sortRank;
+  if(s==="cumpl_asc")return d.sort((a,b)=>(a.cumpl??1e9)-(b.cumpl??1e9));
+  if(s==="cumpl_desc")return d.sort((a,b)=>(b.cumpl??-1)-(a.cumpl??-1));
+  if(s==="vol_desc")return d.sort((a,b)=>b.total-a.total);
+  if(s==="def_asc")return d.sort((a,b)=>(a.deficit??1e9)-(b.deficit??1e9));
+  return d.sort((a,b)=>a.name.localeCompare(b.name))}
+function scatterBig(d){
+  d=d.filter(x=>x.comp!=null);const W=1100,H=420,P={l:50,r:20,t:18,b:44};
+  if(!d.length)return `<div class="empty">Sin datos</div>`;
+  const M=Math.max(...d.map(x=>x.comp),...d.map(x=>x.mediaDia),5)*1.12;
+  const ix=v=>P.l+(v/M)*(W-P.l-P.r),iy=v=>H-P.b-(v/M)*(H-P.t-P.b);
+  const maxT=Math.max(...d.map(x=>x.total)),rad=t=>6+Math.sqrt(t/maxT)*26;
+  const tk=5,tv=Array.from({length:tk+1},(_,i)=>Math.round(M/tk*i));
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">
+    ${tv.map(v=>`<line class="gl" x1="${ix(v).toFixed(1)}" x2="${ix(v).toFixed(1)}" y1="${P.t}" y2="${H-P.b}"/><line class="gl" x1="${P.l}" x2="${W-P.r}" y1="${iy(v).toFixed(1)}" y2="${iy(v).toFixed(1)}"/><text class="tk" x="${ix(v).toFixed(1)}" y="${H-P.b+16}" text-anchor="middle">${v}</text><text class="tk" x="${P.l-7}" y="${(iy(v)+3).toFixed(1)}" text-anchor="end">${v}</text>`).join("")}
+    <line x1="${ix(0)}" y1="${iy(0)}" x2="${ix(M)}" y2="${iy(M)}" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="5 4" opacity=".4"/>
+    <text class="tk" x="${ix(M)-6}" y="${iy(M)+14}" text-anchor="end">cumplimiento exacto</text>
+    <text class="axlab" x="${(P.l+W-P.r)/2}" y="${H-6}" text-anchor="middle">Compromiso / día →</text>
+    <text class="axlab" x="${-(H/2)}" y="14" transform="rotate(-90)" text-anchor="middle">Media real / día →</text>
+    ${d.sort((a,b)=>b.total-a.total).map(x=>`<circle cx="${ix(x.comp).toFixed(1)}" cy="${iy(x.mediaDia).toFixed(1)}" r="${rad(x.total).toFixed(1)}" fill="${COL[x.status.cls]||COL.amber}" fill-opacity=".58" stroke="${COL[x.status.cls]||COL.amber}" stroke-width="1.5" data-tip="<b>${esc(x.name)}</b><br>Compromiso ${x.comp}/día · real ${fmt1(x.mediaDia)}/día<br>${x.cumpl}% · ${fmt(x.total)} envíos"/>`).join("")}
+  </svg>`;
+}
+function renderCumplimiento(){
+  const d=fc(),wc=d.filter(x=>x.comp!=null);
+  const cumplen=wc.filter(x=>x.cumpl>=90).length,incump=wc.filter(x=>x.cumpl<90).length,supera=wc.filter(x=>x.cumpl>=130).length;
+  const pct=wc.length?Math.round(cumplen/wc.length*100):0;
+  const ranked=sortRank(d.slice()),CAP=160,refPos=100/CAP*100;
+  const rankHTML=ranked.map(x=>{const w=x.cumpl==null?0:Math.min(x.cumpl,CAP)/CAP*100,st=x.status,over=x.cumpl!=null&&x.cumpl>CAP;
+    return `<div class="rrow">
+      <div class="rname"><div class="n">${esc(x.name)}</div><div class="m"><span class="tariff">${esc(x.tarifa)}</span> · ${esc(x.comercial)} · ${esc(x.poblacion||"—")}</div></div>
+      <div class="volchip"><b>${fmt(x.total)}</b>envíos</div>
+      <div class="track" data-tip="Media ${fmt1(x.mediaDia)}/día vs compromiso ${x.comp??"—"}/día"><div class="base"></div><div class="fill bg-${st.cls||'amber'}" style="width:${w}%"></div>${x.comp!=null?`<div class="ref" style="left:${refPos}%"></div><div class="reflab" style="left:${refPos}%">comp. ${x.comp}</div>`:""}<div class="vlab">${fmt1(x.mediaDia)}/día${over?" ▸":""}</div></div>
+      <div class="pct"><div class="p c-${st.cls||'amber'}">${x.cumpl==null?"—":x.cumpl+"%"}</div><div class="s c-${st.cls||'amber'}">${st.label}</div></div>
+    </div>`}).join("")||`<div class="empty">Sin clientes para este filtro.</div>`;
+  // déficit table (ordenable)
+  const sumEsp=wc.reduce((a,c)=>a+c.comp*c.dias,0),sumReal=wc.reduce((a,c)=>a+c.total,0),sumDef=wc.reduce((a,c)=>a+c.deficit,0);
+  const defTable=makeTable("def",[
+    {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>`<span class="cn">${esc(c.name)}</span>`},
+    {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
+    {k:"comp",label:"Comp./día",align:"r",val:c=>c.comp,cell:c=>c.comp},
+    {k:"dias",label:"Días op.",align:"r",val:c=>c.dias,cell:c=>c.dias},
+    {k:"esp",label:"Esperado",align:"r",val:c=>c.comp*c.dias,cell:c=>fmt(c.comp*c.dias)},
+    {k:"total",label:"Real",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
+    {k:"deficit",label:"Déficit / Superávit",align:"r",val:c=>c.deficit,cell:c=>`<b class="${c.deficit<0?'c-red':'c-green'}">${c.deficit>0?"+":""}${fmt(c.deficit)}</b>`},
+  ],wc,{def:{k:"deficit",dir:1},foot:`<td>TOTAL (${wc.length})</td><td></td><td></td><td></td><td class="r">${fmt(sumEsp)}</td><td class="r">${fmt(sumReal)}</td><td class="r ${sumDef<0?'c-red':'c-green'}">${sumDef>0?"+":""}${fmt(sumDef)}</td>`});
+  // rachas
+  const rachas=wc.filter(x=>x.racha>0).sort((a,b)=>b.racha-a.racha).slice(0,12);
+  const rachasHTML=rachas.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · compromiso ${c.comp}/día · ${c.cumpl}% medio</div></div><div class="right"><div class="${c.racha>=10?'c-red':'c-amber'}" style="font-weight:700;font-size:15px">${c.racha}<span style="font-size:11px;font-weight:500"> días</span></div><div class="m" style="font-size:11px;color:var(--muted)">sin cumplir</div></div></div>`).join("")||`<div class="empty">Ningún cliente con racha de incumplimiento.</div>`;
+  return `<div class="kpis k3">
+    ${kpiCard({ic:IC.check,lab:"Cartera en cumplimiento",val:`${pct}<small>%</small>`,cls:pct>=60?"c-green":pct>=35?"c-amber":"c-red",sub:`<b>${cumplen}</b> de ${wc.length} · ${supera} superan (≥130%)`})}
+    ${kpiCard({ic:IC.alert,lab:"Clientes que incumplen",val:fmt(incump),cls:"c-red",accent:false,sub:"por debajo del 90%"})}
+    ${kpiCard({ic:IC.box,lab:"Déficit acumulado total",val:fmt(wc.reduce((a,c)=>a+Math.min(c.deficit,0),0)),cls:"c-red",sub:"envíos por debajo de lo pactado"})}
+  </div>
+  <div class="blk">
+    <div class="blkhd"><span class="eyebrow">Ranking</span><h2>Cumplimiento por cliente</h2>
+      <select class="sel" id="sortRank" style="margin-left:auto"><option value="cumpl_asc">Peor cumplimiento primero</option><option value="cumpl_desc">Mejor cumplimiento primero</option><option value="vol_desc">Más volumen primero</option><option value="def_asc">Mayor déficit primero</option><option value="name">Nombre (A–Z)</option></select>
+    </div>
+    <div class="panel"><div class="rank">${rankHTML}</div>
+      <div class="legend"><span><i class="bg-blue"></i>Supera ≥130%</span><span><i class="bg-green"></i>Cumple 90–129%</span><span><i class="bg-amber"></i>Riesgo 65–89%</span><span><i class="bg-red"></i>No cumple &lt;65%</span></div></div>
+  </div>
+  <div class="blk"><div class="blkhd"><span class="eyebrow">Tarifa</span><h2>Compromiso vs. envíos reales</h2><span class="hint">cada burbuja = un cliente · tamaño = volumen total · por debajo de la diagonal = no llega a lo pactado</span></div>
+    <div class="panel"><div class="chart-pad">${scatterBig(d)}</div></div></div>
+  <div class="blk grid2">
+    <div><div class="blkhd"><span class="eyebrow">Detalle</span><h2>Déficit / superávit acumulado</h2></div><div class="panel">${defTable}</div></div>
+    <div><div class="blkhd"><span class="eyebrow">Alertas</span><h2>Días consecutivos sin cumplir</h2></div><div class="panel"><div class="lst">${rachasHTML}</div></div></div>
+  </div>`;
+}
+function renderTendencia(){
+  const d=fc();
+  if(!state.trendClient||!d.find(x=>x.name===state.trendClient)){const r=sortRank(d.slice());state.trendClient=(r[0]||d[0]||{}).name||null}
+  const sel=d.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  const x=MODEL.clients.find(c=>c.name===state.trendClient);
+  const wSeries=x?x.weekly.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})})):[];
+  const rampSeries=x?x.ramp.map((v,i)=>({v,x:"d"+i,label:"Día "+(i+1)+" desde alta"})):[];
+  const compW=x&&x.comp!=null?x.comp*5:null;
+  const ag=aggregate(d,MODEL.dates);
+  // tabla tendencia (ordenable)
+  const wc=d.filter(c=>c.comp!=null);
+  const tendTable=makeTable("tend",[
+    {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>`<span class="cn">${esc(c.name)}</span>`},
+    {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
+    {k:"tend",label:"Tendencia",val:c=>c.tval,cell:c=>`<span class="trend-${c.tSym==='↑'?'up':c.tSym==='↓'?'dn':'eq'}">${c.tSym} ${c.tSym==='↑'?'Sube':c.tSym==='↓'?'Baja':'Estable'}</span>`},
+    {k:"wow",label:"WoW",align:"r",val:c=>c.wow,cell:c=>`<span class="${c.wow==null?'':c.wow>=0?'c-green':'c-red'}">${c.wow==null?"—":pctSign(c.wow*100)}</span>`},
+    {k:"mediaSem",label:"Media/sem",align:"r",val:c=>c.mediaSem,cell:c=>fmt1(c.mediaSem)},
+    {k:"ttc",label:"Time-to-compromiso",align:"r",val:c=>c.ttc,cell:c=>c.ttc==null?'<span class="tag gray">no alcanzado</span>':c.ttc+" días op."},
+  ],wc,{def:{k:"tend",dir:1}});
+  return `<div class="kpis k2">
+    ${kpiCard({ic:IC.trend,accent:true,lab:"Variación semanal (WoW)",val:pctSign(ag.wowG),cls:ag.wowG>=0?"c-green":"c-red",sub:"última semana cerrada vs anterior"})}
+    ${kpiCard({ic:IC.cal,lab:"Variación mensual (MoM)",val:pctSign(ag.momG),cls:ag.momG>=0?"c-green":"c-red",sub:ag.momRange||"mes móvil vs anterior"})}
+  </div>
+  <div class="blk grid2">
+    <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Tendencia</span><select class="sel" id="trendsel" style="margin-left:auto;max-width:240px">${sel.map(c=>`<option value="${esc(c.name)}"${c.name===state.trendClient?" selected":""}>${esc(c.name)}</option>`).join("")}</select></div>
+      <div class="legend-inline"><span><i class="ln sol"></i>Envíos/semana</span><span><i class="ln dash"></i>Compromiso semanal</span></div>${lineChart(wSeries,{ref:compW,refLabel:"compromiso",color:COL.blue,fillId:"td"})}</div></div>
+    <div class="panel"><div class="chart-pad"><div class="blkhd" style="margin-bottom:4px"><span class="eyebrow">Rampa</span><h2 style="font-size:14px">Curva desde el alta${x?` · ${esc(x.name)}`:""}</h2></div>
+      <div class="legend-inline"><span>Envíos diarios desde el primer día con actividad${x&&x.ttc!=null?` · alcanzó el compromiso en <b style="color:var(--ink-2)">${x.ttc} días op.</b>`:x?` · <b style="color:var(--ink-2)">aún no alcanza el compromiso</b>`:""}</span></div>${lineChart(rampSeries,{ref:x?x.comp:null,refLabel:"comp./día",color:COL.green,fillId:"rp"})}</div></div>
+  </div>
+  <div class="blk"><div class="blkhd"><span class="eyebrow">Detalle</span><h2>Dinámica por cliente</h2></div>
+    <div class="panel">${tendTable}</div></div>`;
+}
+function renderSegmentacion(){
+  const d=fc();
+  const byCom={};d.forEach(c=>{const k=c.comercial||"—";(byCom[k]=byCom[k]||{n:0,env:0,comp:0,cumplen:0,wc:0});const o=byCom[k];o.n++;o.env+=c.total;if(c.comp!=null){o.comp+=c.comp;o.wc++;if(c.cumpl>=90)o.cumplen++}});
+  const comRows=Object.entries(byCom).sort((a,b)=>b[1].env-a[1].env);
+  const maxComEnv=Math.max(...comRows.map(r=>r[1].env),1);
+  const byTar={};d.forEach(c=>{const k=c.tarifa||"—";(byTar[k]=byTar[k]||{n:0,env:0,comp:0,wc:0,cumpl:0});const o=byTar[k];o.n++;o.env+=c.total;if(c.comp!=null){o.comp+=c.comp;o.wc++;o.cumpl+=c.cumpl}});
+  const tarRows=Object.entries(byTar).sort((a,b)=>b[1].env-a[1].env);
+  const maxTarEnv=Math.max(...tarRows.map(r=>r[1].env),1);
+  const tEnv=d.reduce((a,c)=>a+c.total,0),tN=d.length,tComp=d.reduce((a,c)=>a+(c.comp||0),0);
+  const comData=comRows.map(([k,v])=>({k,...v,pct:v.wc?Math.round(v.cumplen/v.wc*100):0}));
+  const tarData=tarRows.map(([k,v])=>({k,...v,cm:v.wc?Math.round(v.comp/v.wc):null,pc:v.wc?Math.round(v.cumpl/v.wc):null}));
+  const comTable=makeTable("seg_com",[
+    {k:"k",label:"Comercial",defDir:1,val:r=>r.k,cell:r=>`<span class="cn">${esc(r.k)}</span>`},
+    {k:"n",label:"Clientes",align:"r",val:r=>r.n,cell:r=>r.n},
+    {k:"comp",label:"Compromiso total/día",align:"r",val:r=>r.comp,cell:r=>fmt(r.comp)},
+    {k:"env",label:"Envíos",align:"r",val:r=>r.env,cell:r=>`${fmt(r.env)}<span class="mini-bar" style="width:${(r.env/maxComEnv*70).toFixed(0)}px"></span>`},
+    {k:"pct",label:"% cumplimiento",align:"r",val:r=>r.pct,cell:r=>`<b class="${r.pct>=60?'c-green':r.pct>=35?'c-amber':'c-red'}">${r.pct}%</b>`},
+  ],comData,{def:{k:"env",dir:-1},foot:`<td>TOTAL</td><td class="r">${tN}</td><td class="r">${fmt(tComp)}</td><td class="r">${fmt(tEnv)}</td><td class="r"></td>`});
+  const tarTable=makeTable("seg_tar",[
+    {k:"k",label:"Tarifa",defDir:1,val:r=>r.k,cell:r=>`<span class="mono">${esc(r.k)}</span>`},
+    {k:"n",label:"Clientes",align:"r",val:r=>r.n,cell:r=>r.n},
+    {k:"cm",label:"Compromiso medio",align:"r",val:r=>r.cm,cell:r=>r.cm==null?"—":r.cm},
+    {k:"env",label:"Envíos",align:"r",val:r=>r.env,cell:r=>`${fmt(r.env)}<span class="mini-bar" style="width:${(r.env/maxTarEnv*70).toFixed(0)}px"></span>`},
+    {k:"pc",label:"% cumpl. medio",align:"r",val:r=>r.pc,cell:r=>r.pc==null?"—":`<b class="${r.pc>=90?'c-green':r.pc>=65?'c-amber':'c-red'}">${r.pc}%</b>`},
+  ],tarData,{def:{k:"env",dir:-1},foot:`<td>TOTAL (${tarRows.length} tarifas)</td><td class="r">${tN}</td><td></td><td class="r">${fmt(tEnv)}</td><td></td>`});
+  return `<div class="blk"><div class="blkhd"><span class="eyebrow">Por comercial</span><h2>Cartera y cumplimiento por comercial</h2></div><div class="panel">${comTable}</div></div>
+  <div class="blk"><div class="blkhd"><span class="eyebrow">Por tarifa</span><h2>Volumen y cumplimiento por tarifa</h2></div><div class="panel">${tarTable}</div></div>`;
+}
+function riskScore(c){let s=0;if(c.cumpl==null)s+=3;else if(c.cumpl<65)s+=4;else if(c.cumpl<90)s+=2;if(c.tSym==='↓')s+=3;else if(c.tSym==='=')s+=1;if(c.gapEnd>30)s+=3;else if(c.gapEnd>14)s+=2;else if(c.gapEnd>7)s+=1;return s;}function motivoRiesgo(c){const p=[];if(c.gapEnd>=7)p.push(c.gapEnd+' días op. sin envíos');if(c.tSym==='↓'){const ws=c.weekly.map(w=>w.sum);let n=0;for(let i=ws.length-1;i>0;i--){if(ws[i]<ws[i-1])n++;else break;}if(n>=2)p.push('bajando '+n+' semanas');else if(c.tval<-0.1)p.push('tendencia a la baja');}if(p.length<2&&c.cumpl!=null&&c.cumpl<65)p.push('al '+c.cumpl+'% del compromiso');if(p.length<2&&c.racha>=10)p.push(c.racha+' días bajo objetivo');return p.slice(0,2).join(', ')||'Seguimiento preventivo';}function riskLevel(s){if(s>=6)return{cls:'red',label:'Urgente'};if(s>=3)return{cls:'amber',label:'Prioritario'};return{cls:'',label:'Vigilancia'};}function renderRiesgoSection(){const sc=fc().map(c=>({c,s:riskScore(c)})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s);if(!sc.length)return `<div class="blk"><div class="blkhd"><span class="eyebrow">Seguimiento comercial</span><h2>Clientes en riesgo</h2></div><div class="panel"><div class="empty">Sin clientes en riesgo esta semana.</div></div></div>`;const rows=sc.map(({c,s})=>{const lv=riskLevel(s);return `<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} &middot; ${motivoRiesgo(c)}</div></div><div class="right"><span class="tag ${lv.cls}">${lv.label}</span></div></div>`;}).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Seguimiento comercial</span><h2>Clientes en riesgo</h2><span class="hint">ordenados por nivel de riesgo</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderNuevosSection(){const nc=fcAll().filter(isNuevo);if(!nc.length)return'';const rows=nc.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div class="c-blue" style="font-weight:700;font-size:13px">En alta</div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos aún</div></div></div>`).join('');return `<div class="blk"><div class="blkhd"><span class="eyebrow">Nuevos clientes</span><h2>En proceso de alta</h2><span class="hint">se incorporarán al detectar el primer envío</span></div><div class="panel"><div class="lst">${rows}</div></div></div>`;}function renderAltas(){
+  const d=fc();
+  const wcA=d.filter(x=>x.comp!=null), cumpleA=wcA.filter(x=>x.cumpl>=90).length, pctA=wcA.length?Math.round(cumpleA/wcA.length*100):0;
+  const inact=d.filter(x=>x.gapEnd>=INACT_DAYS).sort((a,b)=>b.gapEnd-a.gapEnd);
+  const recientes=d.filter(c=>c.altaDate!=null).sort((a,b)=>b.altaIdx-a.altaIdx).slice(0,12);
+  const inactHTML=inact.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · ${esc(c.poblacion||"—")} · ${fmt(c.total)} envíos totales</div></div><div class="right"><div class="${c.gapEnd>=30?'c-red':'c-amber'}" style="font-weight:700;font-size:15px">${c.gapEnd}<span style="font-size:11px;font-weight:500"> días</span></div><div class="m" style="font-size:11px;color:var(--muted)">sin envíos</div></div></div>`).join("")||`<div class="empty">Ningún cliente inactivo &gt;${INACT_DAYS} días operativos. 👍</div>`;
+  const recHTML=recientes.map(c=>`<div class="lrow"><div class="info"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.comercial)} · alta operativa ${c.altaDate.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})} · tarifa ${esc(c.tarifa)}</div></div><div class="right"><div style="font-weight:700;font-size:14px" class="c-${c.status.cls||''}">${c.cumpl==null?"—":c.cumpl+"%"}</div><div class="m" style="font-size:11px;color:var(--muted)">${c.ttc==null?"sin alcanzar comp.":"comp. en "+c.ttc+"d"}</div></div></div>`).join("")||`<div class="empty">Sin datos</div>`;
+  return `<div class="kpis k2">
+    ${kpiCard({ic:IC.users,lab:"Clientes en cartera",val:fmt(d.length),sub:"total en la vista"})}
+    ${kpiCard({ic:IC.check,lab:"Cumplen el compromiso",val:fmt(cumpleA),cls:pctA>=60?"c-green":pctA>=35?"c-amber":"c-red",sub:`${pctA}% · de ${wcA.length} con compromiso`})}
+  </div>
+  <div class="blk grid2">
+    <div>${renderRiesgoSection()}<div class="blk"><div class="blkhd"><h2>Inactivos</h2><span class="hint">sin envíos en los últimos ${INACT_DAYS} días operativos</span></div><div class="panel"><div class="lst">${inactHTML}</div></div></div></div>
+    <div><div class="blk"><div class="blkhd"><span class="eyebrow">Altas recientes</span><h2>Últimos clientes nuevos</h2></div><div class="panel"><div class="lst">${recHTML}</div></div></div>${renderNuevosSection()}</div>
+  </div>`;
+}
+function renderClientes(){
+  const all=fcAll();
+  const indiv=all.filter(c=>!c.isGroup);
+  const nBaja=indiv.filter(isBaja).length;
+  const nAct=all.filter(c=>!isBaja(c)).length;
+  const nGrp=GRUPOS.length;
+  const f=state.clientesFilter;
+  const head=`<div class="blk"><div class="blkhd"><span class="eyebrow">Gestión de cartera</span><h2>Clientes y bajas</h2><span class="hint">Marca como baja a los clientes que dejen de trabajar con vosotros, o <b>agrupa varias cuentas</b> que facturan juntas para medirlas como una sola. ${BAJAS_SRC==="kv"?'<b style="color:var(--green)">Compartido con el equipo.</b>':'<b style="color:var(--amber)">Guardado solo en este navegador.</b>'}</span></div><div class="filterbar" style="padding:0 0 14px"><div class="cfilter"><button data-cfilter="all" aria-pressed="${f==="all"}">Todos (${all.length})</button><button data-cfilter="act" aria-pressed="${f==="act"}">Activos (${nAct})</button><button data-cfilter="baja" aria-pressed="${f==="baja"}">De baja (${nBaja})</button><button data-cfilter="grp" aria-pressed="${f==="grp"}">Grupos (${nGrp})</button></div></div>`;
+  let body;
+  if(f==="grp"){body=renderGruposBody();}
+  else{
+    let rows=all;
+    if(f==="act")rows=all.filter(c=>!isBaja(c));
+    else if(f==="baja")rows=all.filter(c=>!c.isGroup&&isBaja(c));
+    const selN=Object.keys(SEL).filter(k=>SEL[k]).length;
+    const bar=`<div style="display:flex;align-items:center;gap:10px;background:var(--bg-2);border-radius:10px;padding:8px 12px;margin-bottom:10px"><span style="color:var(--ink-2);font-size:12.5px">${selN?selN+" cuenta"+(selN>1?"s":"")+" seleccionada"+(selN>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola"}</span><button class="primbtn" style="margin-left:auto" data-agrupar ${selN>=2?"":"disabled"}>Agrupar${selN>=2?" ("+selN+")":""}</button></div>`;
+    const tbl=makeTable("clientes",[
+      {k:"sel",label:"",sortable:false,val:()=>0,cell:c=>c.isGroup?'<span class="grpico">◉</span>':`<input type="checkbox" class="selbox" data-sel="${esc(keyOf(c))}" ${SEL[keyOf(c)]?"checked":""}>`},
+      {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>c.isGroup?`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">Grupo de ${c.members.length} empresas</div>`:`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.poblacion||"")}${c.cod?" · "+esc(c.cod):""}</div>`},
+      {k:"comercial",label:"Comercial",defDir:1,val:c=>c.comercial,cell:c=>esc(c.comercial)},
+      {k:"tarifa",label:"Tarifa",defDir:1,val:c=>c.tarifa,cell:c=>`<span class="mono">${esc(c.tarifa)}</span>`},
+      {k:"total",label:"Total envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
+      {k:"cumpl",label:"Cumplimiento",align:"r",val:c=>c.cumpl,cell:c=>c.comp==null?'<span class="tag gray">Sin compromiso</span>':c.cumpl==null?'<span class="tag gray">s/d</span>':`<b class="c-${c.status.cls||""}">${c.cumpl}%</b>`},
+      {k:"estado",label:"Estado",val:c=>c.isGroup?3:isBaja(c)?2:isNuevo(c)?1:0,cell:c=>c.isGroup?'<span class="tag blue">Grupo</span>':isBaja(c)?'<span class="tag red">Baja</span>':isNuevo(c)?'<span class="tag blue">En alta</span>':'<span class="tag green">Activo</span>'},
+      {k:"accion",label:"",align:"r",sortable:false,val:()=>0,cell:c=>{if(c.isGroup)return `<button class="bajabtn" data-ungroup="${c.gidx}">Deshacer</button>`;const b=isBaja(c),n=isNuevo(c);return `<button class="bajabtn${b?" on":""}" data-toggle="${esc(keyOf(c))}">${b?"Reactivar":"Dar de baja"}</button><button class="bajabtn${n?" on":""}" data-toggle-nuevo="${esc(keyOf(c))}">${n?"Quitar":"Nuevo"}</button>`}},
+    ],rows,{def:{k:"total",dir:-1},rowClass:c=>c.isGroup?"isgroup":(isBaja(c)?"isbaja":"")});
+    body=bar+`<div class="panel">${tbl}</div>`;
+  }
+  return head+body+`</div>`+(state.agruparModal?renderAgruparModal():"");
+}
+const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes};
+
+function renderTabs(){
+  $("#tabbar").innerHTML=TABS.map(t=>{let badge="";
+    if(MODEL&&t.id==="cumplimiento")badge=`<span class="n">${fc().filter(x=>x.comp!=null&&x.cumpl<65).length}</span>`;
+    if(MODEL&&t.id==="clientes"){const nb=fcAll().filter(isBaja).length;if(nb)badge=`<span class="n">${nb}</span>`}
+    return `<button class="tab" role="tab" data-tab="${t.id}" aria-selected="${state.tab===t.id}">${t.label}${badge}</button>`}).join("");
+}
+function renderActive(){
+  $("#panels").innerHTML=`<div class="tabpanel active">${RENDERERS[state.tab]()}</div>`;
+  bindTips($("#panels"));
+  const sr=$("#sortRank");if(sr){sr.value=state.sortRank;sr.addEventListener("change",e=>{state.sortRank=e.target.value;renderActive()})}
+  const ts=$("#trendsel");if(ts)ts.addEventListener("change",e=>{state.trendClient=e.target.value;renderActive()});
+  $("#footinfo").textContent=`${MODEL.clients.length} clientes · ${MODEL.N} días · ${SRC==="live"?"datos en vivo":"snapshot embebido"}`;
+}
+function renderPills(){const coms=["Todos",...[...new Set(MODEL.clients.map(x=>x.comercial))].filter(c=>c&&c!=="—").sort()];
+  $("#comercialPills").innerHTML=coms.map(c=>`<button class="pill" aria-pressed="${state.comercial===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}
+function renderAll(){renderTabs();renderPills();renderActive()}
+
+/* ===== META / THEME ===== */
+function setMeta(){$("#srcdot").className="dot"+(SRC==="live"?"":" snap");$("#srctxt").textContent=SRC==="live"?"Datos en vivo":"Snapshot";
+  $("#updtxt").textContent=UPDATED?("Actualizado "+UPDATED.toLocaleString("es-ES",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})):""}
+function banner(t,m){const b=$("#banner");b.className="banner show "+t;$("#banmsg").innerHTML=m}
+function applyTheme(th){document.documentElement.setAttribute("data-theme",th);
+  $("#themeic").innerHTML=th==="dark"?'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>':'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/>';
+  try{localStorage.setItem("impackta-theme",th)}catch(e){}}
+
+/* ===== LOAD ===== */
+async function loadLive(){const btn=$("#refresh");btn.disabled=true;btn.querySelector("svg").classList.add("spin");
+  const sources=[API_SHEET,gvizURL()];  // 1º proxy de Cloudflare (sin CORS) · 2º directo a Google
+  let ok=false;
+  for(const u of sources){
+    try{const res=await fetch(u,{cache:"no-store"});if(!res.ok)continue;const txt=await res.text();
+      if(txt.trim().startsWith("<"))continue;const m=transform(parseCSV(txt));if(!m.clients.length)continue;
+      MODEL=m;MODEL.clients.forEach(c=>{if(c.total>0&&NUEVOS.has(keyOf(c))){NUEVOS.delete(keyOf(c));saveNuevosLocal();}});SRC="live";UPDATED=new Date();renderAll();setMeta();
+      banner("ok",`<b>Conectado.</b> ${m.clients.length} clientes leídos en vivo desde el Sheet (hoja 2026).`);
+      setTimeout(()=>$("#banner").classList.remove("show"),4200);ok=true;break;
+    }catch(e){/* siguiente fuente */}
+  }
+  if(!ok){SRC="snapshot";setMeta();banner("warn",`<b>No se pudo leer el Sheet en vivo</b> — se muestra el snapshot embebido. Alojado en Cloudflare Pages funcionará el directo a través de <code>/api/sheet</code>. Si lo abres como archivo local, el navegador bloquea la lectura.`);}
+  btn.disabled=false;btn.querySelector("svg").classList.remove("spin");
+}
+function boot(){MODEL=transform(parseCSV(SNAPSHOT.trim()));SRC="snapshot";renderAll();setMeta()}
+
+/* ===== EVENTS ===== */
+$("#panels").addEventListener("click",e=>{
+  const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}const ng=e.target.closest("[data-toggle-nuevo]");if(ng){toggleNuevo(ng.dataset.toggleNuevo);return}
+  const cf=e.target.closest("[data-cfilter]");if(cf){state.clientesFilter=cf.dataset.cfilter;renderActive();return}
+   const sb=e.target.closest("[data-sel]");if(sb){const k=sb.dataset.sel;if(SEL[k])delete SEL[k];else SEL[k]=1;renderActive();return}
+   const ag=e.target.closest("[data-agrupar]");if(ag){if(Object.keys(SEL).filter(x=>SEL[x]).length>=2){state.agruparModal=true;renderActive();}return}
+   const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
+   const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
+   const gca=e.target.closest("[data-grupo-cancel]");if(gca){state.agruparModal=false;renderActive();return}
+  const th=e.target.closest("th[data-tid]");if(!th)return;
+  const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
+  if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
+  renderActive()});
+$("#tabbar").addEventListener("click",e=>{const t=e.target.closest(".tab");if(!t)return;state.tab=t.dataset.tab;renderTabs();renderActive();$$(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===state.tab))});
+$("#comercialPills").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;state.comercial=b.dataset.c;renderPills();renderActive();renderTabs()});
+$("#search").addEventListener("input",e=>{state.q=e.target.value;renderActive();renderTabs()});
+$("#refresh").addEventListener("click",loadLive);
+$("#banx").addEventListener("click",()=>$("#banner").classList.remove("show"));
+$("#theme").addEventListener("click",()=>{const cur=document.documentElement.getAttribute("data-theme");applyTheme(cur==="dark"?"light":"dark")});
+
+/* ===== INIT ===== */
+(function(){let th="light";try{th=localStorage.getItem("impackta-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){}applyTheme(th)})();
+loadBajasLocal();loadNuevosLocal();
+boot();
+loadLive();
+syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();
+</script>
+</body>
+</html>
+
+
+
+
