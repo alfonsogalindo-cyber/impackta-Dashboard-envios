@@ -226,7 +226,7 @@
   @media print{header{position:static}.hd-right,.filterbar,.tabbar,.banner{display:none!important}
     .tabpanel{display:block!important}body{background:#fff}.panel,.kpi{box-shadow:none}}
 .grpico{display:inline-block;color:#185FA5;font-size:15px;line-height:1}
-.primbtn{height:30px;padding:0 14px;border-radius:8px;border:none;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;cursor:pointer}
+.primbtn{height:30px;padding:0 14px;border-radius:8px;border:none;background:#185FA5;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer}
 .primbtn:disabled{opacity:.4;cursor:not-allowed}
 .selbox{width:16px;height:16px;cursor:pointer}
 tr.isgroup{background:var(--bg-2)}
@@ -664,7 +664,7 @@ function renderTendencia(){
   const d=fc();
   if(!state.trendClient||!d.find(x=>x.name===state.trendClient)){const r=sortRank(d.slice());state.trendClient=(r[0]||d[0]||{}).name||null}
   const sel=d.slice().sort((a,b)=>a.name.localeCompare(b.name));
-  const x=MODEL.clients.find(c=>c.name===state.trendClient);
+  const x=d.find(c=>c.name===state.trendClient);
   const wSeries=x?x.weekly.map(w=>({v:w.sum,x:w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"}),label:"Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"})})):[];
   const rampSeries=x?x.ramp.map((v,i)=>({v,x:"d"+i,label:"Día "+(i+1)+" desde alta"})):[];
   const compW=x&&x.comp!=null?x.comp*5:null;
@@ -751,7 +751,7 @@ function renderClientes(){
     if(f==="act")rows=all.filter(c=>!isBaja(c));
     else if(f==="baja")rows=all.filter(c=>!c.isGroup&&isBaja(c));
     const selN=Object.keys(SEL).filter(k=>SEL[k]).length;
-    const bar=`<div style="display:flex;align-items:center;gap:10px;background:var(--bg-2);border-radius:10px;padding:8px 12px;margin-bottom:10px"><span style="color:var(--ink-2);font-size:12.5px">${selN?selN+" cuenta"+(selN>1?"s":"")+" seleccionada"+(selN>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola"}</span><button class="primbtn" style="margin-left:auto" data-agrupar ${selN>=2?"":"disabled"}>Agrupar${selN>=2?" ("+selN+")":""}</button></div>`;
+    const bar=`<div style="display:flex;align-items:center;gap:10px;background:var(--bg-2);border-radius:10px;padding:8px 12px;margin-bottom:10px"><span id="agtxt" style="color:var(--ink-2);font-size:12.5px">${selN?selN+" cuenta"+(selN>1?"s":"")+" seleccionada"+(selN>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola"}</span><button class="primbtn" id="agbtn" style="margin-left:auto" data-agrupar ${selN>=2?"":"disabled"}>Agrupar${selN>=2?" ("+selN+")":""}</button></div>`;
     const tbl=makeTable("clientes",[
       {k:"sel",label:"",sortable:false,val:()=>0,cell:c=>c.isGroup?'<span class="grpico">◉</span>':`<input type="checkbox" class="selbox" data-sel="${esc(keyOf(c))}" ${SEL[keyOf(c)]?"checked":""}>`},
       {k:"name",label:"Cliente",defDir:1,val:c=>c.name,cell:c=>c.isGroup?`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">Grupo de ${c.members.length} empresas</div>`:`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.poblacion||"")}${c.cod?" · "+esc(c.cod):""}</div>`},
@@ -814,7 +814,7 @@ function boot(){MODEL=transform(parseCSV(SNAPSHOT.trim()));SRC="snapshot";render
 $("#panels").addEventListener("click",e=>{
   const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}const ng=e.target.closest("[data-toggle-nuevo]");if(ng){toggleNuevo(ng.dataset.toggleNuevo);return}
   const cf=e.target.closest("[data-cfilter]");if(cf){state.clientesFilter=cf.dataset.cfilter;renderActive();return}
-   const sb=e.target.closest("[data-sel]");if(sb){const k=sb.dataset.sel;if(SEL[k])delete SEL[k];else SEL[k]=1;renderActive();return}
+   const sb=e.target.closest("[data-sel]");if(sb){const k=sb.dataset.sel;if(SEL[k])delete SEL[k];else SEL[k]=1;const n=Object.keys(SEL).filter(x=>SEL[x]).length;const tx=document.getElementById("agtxt"),bt=document.getElementById("agbtn");if(tx)tx.textContent=n?n+" cuenta"+(n>1?"s":"")+" seleccionada"+(n>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola";if(bt){bt.disabled=n<2;bt.textContent="Agrupar"+(n>=2?" ("+n+")":"");}return}
    const ag=e.target.closest("[data-agrupar]");if(ag){if(Object.keys(SEL).filter(x=>SEL[x]).length>=2){state.agruparModal=true;renderActive();}return}
    const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
    const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
