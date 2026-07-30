@@ -7,7 +7,23 @@
 
 const SHEET_ID   = "10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU";
 const SHEET_NAME = "2026";
-const SHEET_GID  = "103618376";  // gid de la pestana 2026 (export incluye filas ocultas; gviz no)
+const SHEET_GID  = "103618376";
+const FESTIVOS_2026 = [
+  {fecha:"2026-01-01",nombre:"Any Nou",ambito:"ES"},
+  {fecha:"2026-01-06",nombre:"Reis",ambito:"ES"},
+  {fecha:"2026-04-03",nombre:"Divendres Sant",ambito:"ES"},
+  {fecha:"2026-04-06",nombre:"Dilluns de Pasqua",ambito:"CAT"},
+  {fecha:"2026-05-01",nombre:"Festa del Treball",ambito:"ES"},
+  {fecha:"2026-06-24",nombre:"Sant Joan",ambito:"CAT"},
+  {fecha:"2026-08-15",nombre:"L Assumpcio",ambito:"ES"},
+  {fecha:"2026-09-11",nombre:"Diada de Catalunya",ambito:"CAT"},
+  {fecha:"2026-10-12",nombre:"Festa Nacional",ambito:"ES"},
+  {fecha:"2026-11-01",nombre:"Tots Sants",ambito:"ES"},
+  {fecha:"2026-12-06",nombre:"Dia de la Constitucio",ambito:"ES"},
+  {fecha:"2026-12-08",nombre:"La Immaculada",ambito:"ES"},
+  {fecha:"2026-12-25",nombre:"Nadal",ambito:"ES"},
+  {fecha:"2026-12-26",nombre:"Sant Esteve",ambito:"CAT"},
+];  // gid de la pestana 2026 (export incluye filas ocultas; gviz no)
 const KV_KEY     = "lista";
 const KV_KEY_NUEVOS = "nuevos";
 const KV_KEY_GRUPOS = "grupos";
@@ -136,6 +152,9 @@ export default {
     }
 
     // ── Todo lo demás → assets estáticos (index.html) ──────────────────────
+    if (path === "/api/festivos" && request.method === "GET") {
+      return jsonRes({ festivos: FESTIVOS_2026 });
+    }
     return env.ASSETS.fetch(request);
   },
 };
