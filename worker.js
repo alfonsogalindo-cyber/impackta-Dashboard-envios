@@ -165,13 +165,17 @@ export default {
       const NL = String.fromCharCode(10);
       const system = "Eres el analista del panel comercial de Impackta, agencia oficial GLS. Respondes SIEMPRE en espanol, con tono profesional y claro para gerencia: ve al grano y explica lo importante, sin rollos ni tecnicismos. USA UNICAMENTE los datos del CONTEXTO. Si un dato no esta en el contexto, dilo claramente y NO lo inventes. Nunca inventes clientes ni cifras: usa los numeros tal cual aparecen. Se conciso pero completo.";
       const user = "CONTEXTO (datos reales del panel, ahora mismo):" + NL + contexto + NL + NL + "PREGUNTA: " + pregunta;
-      try {
-        const ai = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", { messages: [ { role: "system", content: system }, { role: "user", content: user } ], max_tokens: 600 });
-        const answer = (ai && (ai.response || ai.result)) || "No he podido generar una respuesta.";
-        return jsonRes({ answer: String(answer).trim() });
-      } catch (e) {
-        return jsonRes({ error: "IA error: " + (e && e.message ? e.message : String(e)) }, 502);
+      const msgs = [ { role: "system", content: system }, { role: "user", content: user } ];
+      const modelos = [ "@cf/meta/llama-4-scout-17b-16e-instruct", "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/meta/llama-3.2-3b-instruct", "@cf/meta/llama-3.1-8b-instruct-fast" ];
+      let lastErr = "";
+      for (const m of modelos) {
+        try {
+          const ai = await env.AI.run(m, { messages: msgs, max_tokens: 600 });
+          const answer = (ai && (ai.response || ai.result)) ? String(ai.response || ai.result).trim() : "";
+          if (answer) { return jsonRes({ answer: answer, modelo: m }); }
+        } catch (e) { lastErr = (e && e.message) ? e.message : String(e); }
       }
+      return jsonRes({ error: "IA error: " + lastErr }, 502);
     }
 
     return env.ASSETS.fetch(request);
