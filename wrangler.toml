@@ -9,3 +9,6 @@ binding = "ASSETS"
 [[kv_namespaces]]
 binding = "BAJAS_KV"
 id = "51af001552ed4fcab781fa837127ea7d"
+
+[ai]
+binding = "AI"
