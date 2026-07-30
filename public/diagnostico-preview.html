@@ -787,15 +787,8 @@ function diagMovers(d,weeks,sel){
   const drops=rows.filter(r=>r.delta<0).sort((a,b)=>a.delta-b.delta).slice(0,8);
   const gains=rows.filter(r=>r.delta>0).sort((a,b)=>b.delta-a.delta).slice(0,8);
   const li=(r,cls)=>'<div class="grow"><span style="flex:1">'+esc(r.name)+(r.isGroup?' <span class="tag blue" style="font-size:9px">grupo</span>':"")+'</span><span style="width:70px;text-align:right;color:var(--muted);font-size:11px">'+fmt(r.prev)+" -> "+fmt(r.cur)+'</span><span style="width:52px;text-align:right;font-weight:600" class="c-'+cls+'">'+(r.delta>0?"+":"")+fmt(r.delta)+'</span></div>';
-  const col=(t,arr,cls,em)=>'<div style="flex:1;min-width:200px"><div class="gblab" style="margin-bottom:4px">'+t+'</div>'+(arr.length?arr.map(r=>li(r,cls)).join(""):'<div style="color:var(--muted);font-size:12px;padding:8px">'+em+'</div>')+'</div>';
-  return '<div style="display:flex;gap:18px;flex-wrap:wrap">'+col("Cayeron",drops,"red","Nadie bajó")+col("Subieron",gains,"green","Nadie subió")+'</div>';
-}
-function diagBreakdown(d,weeks,sel){
-  const M=weeks[sel].date,by={};
-  d.forEach(c=>{const s=wkSum(c,M);if(!s)return;const k=c.comercial||"—";by[k]=(by[k]||0)+s;});
-  const arr=Object.entries(by).sort((a,b)=>b[1]-a[1]),tot=arr.reduce((a,b)=>a+b[1],0)||1;
-  if(!arr.length)return '<div style="color:var(--muted);font-size:12px">Sin envíos esta semana.</div>';
-  return arr.map(e=>{const pc=Math.round(e[1]/tot*100);return '<div class="grow"><span style="width:120px">'+esc(e[0])+'</span><span style="flex:1"><span style="display:inline-block;height:8px;border-radius:4px;background:var(--blue);width:'+pc+'%;min-width:2px"></span></span><span style="width:78px;text-align:right">'+fmt(e[1])+" ("+pc+'%)</span></div>';}).join("");
+  const col=(t,arr,cls,em)=>'<div style="flex:1;min-width:220px"><div class="gblab" style="margin-bottom:4px">'+t+'</div>'+(arr.length?arr.map(r=>li(r,cls)).join(""):'<div style="color:var(--muted);font-size:12px;padding:8px">'+em+'</div>')+'</div>';
+  return '<div style="display:flex;gap:24px;flex-wrap:wrap">'+col("Cayeron",drops,"red","Nadie bajó")+col("Subieron",gains,"green","Nadie subió")+'</div>';
 }
 function exportDiagWeek(){
   const d=fc(),ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks;let sel=state.diagWeek;if(sel==null||sel>=weeks.length)sel=weeks.length-1;
@@ -813,15 +806,17 @@ function renderDiagnostico(){
   let sel=state.diagWeek;if(sel==null||sel<0||sel>=weeks.length){sel=weeks.length-1;while(sel>0&&weeks[sel].dias<4)sel--;}
   state.diagWeek=sel;const mode=state.diagMode||"total";
   const fw=weeks.map(w=>festWeek(w.date)),w=weeks[sel],prev=sel>0?weeks[sel-1]:null;
-  const val=x=>mode==="dia"?(x.dias?Math.round(x.sum/x.dias):0):x.sum;
-  const delta=prev?val(w)-val(prev):null,fest=fw[sel],semLabel=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+  const fest=fw[sel],semLabel=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+  const netD=w.sum-(prev?prev.sum:0);
+  const allD=d.map(c=>wkSum(c,w.date)-(prev?wkSum(c,prev.date):0));
+  const subT=allD.filter(x=>x>0).reduce((a,b)=>a+b,0),cayT=allD.filter(x=>x<0).reduce((a,b)=>a+b,0);
   const note=w.dias<4?'<span class="tag amber">Semana en curso (incompleta)</span>':(fest.length?'<span class="tag amber">Festivo: '+fest.map(f=>esc(f.nombre)).join(", ")+" · "+w.dias+' días op.</span>':'<span class="tag gray">'+w.dias+' días op.</span>');
+  const badge=(lab,v,col)=>'<div class="gbadge"><div class="gblab">'+lab+'</div><div class="gbval" style="color:'+(col||"inherit")+'">'+v+'</div></div>';
   return '<div class="blk"><div class="blkhd"><span class="eyebrow">Diagnóstico</span><h2>¿Por qué se movió el volumen?</h2><span class="hint">Haz clic en una semana del gráfico para ver qué clientes la movieron.</span></div>'
     +'<div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span class="gblab">Envíos por semana</span><div class="cfilter" style="margin-left:auto"><button data-diagmode="total" aria-pressed="'+(mode==="total")+'">Total</button><button data-diagmode="dia" aria-pressed="'+(mode==="dia")+'">Por día operativo</button></div></div>'+diagChart(weeks,fw,sel,mode)+'<div style="font-size:11px;color:var(--muted);margin-top:4px"><span style="color:var(--amber)">●</span> semana con festivo</div></div>'
-    +'<div class="blk grid2"><div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><h2 style="font-size:15px;margin:0">Semana del '+semLabel+'</h2>'+note+'</div>'
-    +'<div style="display:flex;gap:16px;margin-bottom:12px"><div class="gbadge"><div class="gblab">'+(mode==="dia"?"Envíos/día":"Total envíos")+'</div><div class="gbval">'+fmt(val(w))+'</div></div><div class="gbadge"><div class="gblab">vs semana anterior</div><div class="gbval" style="color:'+(delta==null?"inherit":delta>=0?"var(--green)":"var(--red)")+'">'+(delta==null?"—":(delta>0?"+":"")+fmt(delta))+'</div></div></div>'
-    +'<div class="gblab" style="margin-bottom:6px">¿Qué cambió?</div>'+diagMovers(d,weeks,sel)+'<div style="margin-top:12px"><button class="bajabtn" data-export>Exportar esta semana a Excel</button></div></div>'
-    +'<div class="panel" style="padding:14px 16px"><div class="gblab" style="margin-bottom:10px">Reparto por comercial · semana del '+semLabel+'</div>'+diagBreakdown(d,weeks,sel)+'</div></div></div>';
+    +'<div class="blk"><div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px"><h2 style="font-size:15px;margin:0">Semana del '+semLabel+'</h2>'+note+'</div>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">'+badge("Total envíos",fmt(w.sum),"")+badge("Subieron",(subT>0?"+":"")+fmt(subT),"var(--green)")+badge("Cayeron",fmt(cayT),"var(--red)")+badge("Neto vs sem. pasada",(netD>0?"+":"")+fmt(netD),(netD>=0?"var(--green)":"var(--red)"))+'</div>'
+    +'<div class="gblab" style="margin-bottom:8px">¿Qué cambió? · quién movió la semana frente a la anterior</div>'+diagMovers(d,weeks,sel)+'<div style="margin-top:14px"><button class="bajabtn" data-export>Exportar esta semana a Excel</button></div></div></div></div>';
 }
 
 const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
@@ -877,6 +872,9 @@ $("#panels").addEventListener("click",e=>{
    const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
    const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
    const gca=e.target.closest("[data-grupo-cancel]");if(gca){state.agruparModal=false;renderActive();return}
+   const dw=e.target.closest("[data-week]");if(dw){state.diagWeek=Number(dw.dataset.week);renderActive();return}
+   const dgm=e.target.closest("[data-diagmode]");if(dgm){state.diagMode=dgm.dataset.diagmode;renderActive();return}
+   const dgx=e.target.closest("[data-export]");if(dgx){exportDiagWeek();return}
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
   if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
