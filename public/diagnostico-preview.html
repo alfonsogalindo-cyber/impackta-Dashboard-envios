@@ -770,53 +770,111 @@ function renderClientes(){
 async function syncFestivos(){try{const r=await fetch(API_FESTIVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();FESTIVOS=Array.isArray(j.festivos)?j.festivos:[];if(MODEL&&state.tab==="diagnostico")renderActive();}catch(e){}}
 function festWeek(M){const s=+M,e=s+6*864e5;return (FESTIVOS||[]).filter(f=>{const t=+new Date(f.fecha+"T00:00:00");return t>=s&&t<=e;});}
 function wkSum(c,M){if(!c.weekly)return 0;const w=c.weekly.find(x=>+x.date===+M);return w?w.sum:0;}
-function diagChart(weeks,fw,sel,mode){
+function daySum(c,j){return (j>=c.altaIdx&&j<c.altaIdx+c.ramp.length)?c.ramp[j-c.altaIdx]:0;}
+function monthLabel(ym){const y=Math.floor(ym/12),m=ym%12;return new Date(y,m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"});}
+function diagWeeklyChart(weeks,fw,sel){
   const W=840,H=230,P={l:42,r:14,t:16,b:32};
-  const val=w=>mode==="dia"?(w.dias?w.sum/w.dias:0):w.sum;
-  const vals=weeks.map(val),max=Math.max.apply(null,vals.concat([1]))*1.14,n=weeks.length,bw=(W-P.l-P.r)/n;
+  const vals=weeks.map(w=>w.sum),max=Math.max.apply(null,vals.concat([1]))*1.14,n=weeks.length,bw=(W-P.l-P.r)/n;
   const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
   const yl=Array.from({length:5},(_,i)=>{const v=max/4*i;return '<text x="'+(P.l-6)+'" y="'+(iy(v)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--muted)">'+fmt(v)+'</text><line x1="'+P.l+'" y1="'+iy(v).toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+iy(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';}).join("");
   const ev=Math.ceil(n/9);
-  const bars=weeks.map((w,i)=>{const x=P.l+i*bw,y=iy(val(w)),ht=Math.max(0,H-P.b-y),isSel=i===sel,f=fw[i].length>0;
+  const bars=weeks.map((w,i)=>{const x=P.l+i*bw,y=iy(w.sum),ht=Math.max(0,H-P.b-y),isSel=i===sel,f=fw[i].length>0;
     return '<g data-week="'+i+'" style="cursor:pointer"><rect x="'+x.toFixed(1)+'" y="'+P.t+'" width="'+bw.toFixed(1)+'" height="'+(H-P.b-P.t)+'" fill="transparent"/><rect x="'+(x+1.5).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-3).toFixed(1)+'" height="'+ht.toFixed(1)+'" rx="2" fill="'+(isSel?"var(--blue)":"var(--ink-2)")+'" opacity="'+(isSel?"1":"0.4")+'"/>'+(f?'<circle cx="'+(x+bw/2).toFixed(1)+'" cy="'+(H-P.b+9)+'" r="2.6" fill="var(--amber)"/>':"")+(i%ev===0?'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-P.b+20)+'" text-anchor="middle" font-size="9" fill="var(--muted)">'+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"})+'</text>':"")+'</g>';}).join("");
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Envios por semana">'+yl+bars+'</svg>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Envios por semana">'+yl+bars+'</svg><div style="font-size:11px;color:var(--muted);margin-top:4px"><span style="color:var(--amber)">●</span> semana con festivo</div>';
 }
-function diagMovers(d,weeks,sel){
-  const M=weeks[sel].date,Pv=sel>0?weeks[sel-1].date:null;
-  const rows=d.map(c=>{const cur=wkSum(c,M),prev=Pv?wkSum(c,Pv):0;return {name:c.name,cur,prev,delta:cur-prev,isGroup:c.isGroup};}).filter(r=>r.cur||r.prev);
-  const drops=rows.filter(r=>r.delta<0).sort((a,b)=>a.delta-b.delta).slice(0,8);
-  const gains=rows.filter(r=>r.delta>0).sort((a,b)=>b.delta-a.delta).slice(0,8);
-  const li=(r,cls)=>'<div class="grow"><span style="flex:1">'+esc(r.name)+(r.isGroup?' <span class="tag blue" style="font-size:9px">grupo</span>':"")+'</span><span style="width:70px;text-align:right;color:var(--muted);font-size:11px">'+fmt(r.prev)+" -> "+fmt(r.cur)+'</span><span style="width:52px;text-align:right;font-weight:600" class="c-'+cls+'">'+(r.delta>0?"+":"")+fmt(r.delta)+'</span></div>';
-  const col=(t,arr,cls,em)=>'<div style="flex:1;min-width:220px"><div class="gblab" style="margin-bottom:4px">'+t+'</div>'+(arr.length?arr.map(r=>li(r,cls)).join(""):'<div style="color:var(--muted);font-size:12px;padding:8px">'+em+'</div>')+'</div>';
-  return '<div style="display:flex;gap:24px;flex-wrap:wrap">'+col("Cayeron",drops,"red","Nadie bajó")+col("Subieron",gains,"green","Nadie subió")+'</div>';
+function diagDailyChart(dayIdx,perDay,dates,selDay,ym,months){
+  const idx=months.indexOf(ym);
+  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center;text-transform:capitalize">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button></div>';
+  if(!dayIdx.length)return nav+'<div class="empty">Sin días operativos este mes.</div>';
+  const W=840,H=210,P={l:42,r:14,t:14,b:26};
+  const vals=dayIdx.map(j=>perDay[j]),max=Math.max.apply(null,vals.concat([1]))*1.14,n=dayIdx.length,bw=(W-P.l-P.r)/n;
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const yl=Array.from({length:4},(_,i)=>{const v=max/3*i;return '<text x="'+(P.l-6)+'" y="'+(iy(v)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--muted)">'+fmt(v)+'</text><line x1="'+P.l+'" y1="'+iy(v).toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+iy(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';}).join("");
+  const ev=Math.ceil(n/14);
+  const bars=dayIdx.map((j,i)=>{const x=P.l+i*bw,y=iy(perDay[j]),ht=Math.max(0,H-P.b-y),isSel=j===selDay;
+    return '<g data-day="'+j+'" style="cursor:pointer"><rect x="'+x.toFixed(1)+'" y="'+P.t+'" width="'+bw.toFixed(1)+'" height="'+(H-P.b-P.t)+'" fill="transparent"/><rect x="'+(x+1).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+ht.toFixed(1)+'" rx="2" fill="'+(isSel?"var(--blue)":"var(--ink-2)")+'" opacity="'+(isSel?"1":"0.4")+'"/>'+(i%ev===0?'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-P.b+16)+'" text-anchor="middle" font-size="9" fill="var(--muted)">'+dates[j].getDate()+'</text>':"")+'</g>';}).join("");
+  return nav+'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Envios por dia">'+yl+bars+'</svg>';
 }
-function exportDiagWeek(){
-  const d=fc(),ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks;let sel=state.diagWeek;if(sel==null||sel>=weeks.length)sel=weeks.length-1;
-  const M=weeks[sel].date,Pv=sel>0?weeks[sel-1].date:null;
-  const lines=[["Cliente","Comercial","Semana anterior","Semana seleccionada","Variacion"]];
-  d.forEach(c=>{const cur=wkSum(c,M),prev=Pv?wkSum(c,Pv):0;if(cur||prev)lines.push([c.name,c.comercial,prev,cur,cur-prev]);});
+function diagMoversRows(d,curFn,prevFn){
+  const rows=d.map(c=>{const cur=curFn(c),prev=prevFn(c);return {name:c.name,comercial:c.comercial,cur,prev,delta:cur-prev,isGroup:c.isGroup};}).filter(r=>r.delta!==0);
+  rows.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  return rows;
+}
+function diagBadges(rows,periodTotal,prevTotal){
+  const subT=rows.filter(r=>r.delta>0).reduce((a,b)=>a+b.delta,0),cayT=rows.filter(r=>r.delta<0).reduce((a,b)=>a+b.delta,0),netD=periodTotal-prevTotal;
+  const unit=(state.diagGran==="dia")?"día anterior":"sem. pasada";
+  const badge=(lab,v,col)=>'<div class="gbadge"><div class="gblab">'+lab+'</div><div class="gbval" style="color:'+(col||"inherit")+'">'+v+'</div></div>';
+  return '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">'+badge("Total envíos",fmt(periodTotal),"")+badge("Subieron",(subT>0?"+":"")+fmt(subT),"var(--green)")+badge("Cayeron",fmt(cayT),"var(--red)")+badge("Neto vs "+unit,(netD>0?"+":"")+fmt(netD),(netD>=0?"var(--green)":"var(--red)"))+'</div>';
+}
+function diagTable(rows){
+  const per=10,pages=Math.max(1,Math.ceil(rows.length/per));let pg=state.diagPage||0;if(pg>=pages)pg=pages-1;if(pg<0)pg=0;state.diagPage=pg;
+  const unit=(state.diagGran==="dia")?"jornada":"semana";
+  if(!rows.length)return '<div style="color:var(--muted);font-size:12px;padding:8px">Ningún cliente varió esta '+unit+'.</div>';
+  const slice=rows.slice(pg*per,pg*per+per);
+  const head='<div class="grow ghead2"><span style="flex:1">Cliente</span><span style="width:90px">Comercial</span><span style="width:120px;text-align:right">Anterior → Actual</span><span style="width:70px;text-align:right">Variación</span></div>';
+  const body=slice.map(r=>'<div class="grow"><span style="flex:1">'+esc(r.name)+(r.isGroup?' <span class="tag blue" style="font-size:9px">grupo</span>':"")+'</span><span style="width:90px;color:var(--muted);font-size:11px">'+esc(r.comercial)+'</span><span style="width:120px;text-align:right;color:var(--muted);font-size:11px">'+fmt(r.prev)+" → "+fmt(r.cur)+'</span><span style="width:70px;text-align:right;font-weight:600" class="c-'+(r.delta<0?"red":"green")+'">'+(r.delta>0?"+":"")+fmt(r.delta)+'</span></div>').join("");
+  const nav=pages>1?'<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px"><button class="bajabtn" data-page="-1"'+(pg<=0?" disabled":"")+'>‹</button><span style="font-size:12px;color:var(--muted)">Página '+(pg+1)+' de '+pages+'</span><button class="bajabtn" data-page="1"'+(pg>=pages-1?" disabled":"")+'>›</button></div>':"";
+  return head+body+nav+'<div style="font-size:11px;color:var(--muted);margin-top:6px">'+rows.length+' clientes variaron esta '+unit+'</div>';
+}
+function diagMonthNav(dir){
+  const dates=MODEL.dates,months=[...new Set(dates.map(d=>d.getFullYear()*12+d.getMonth()))].sort((a,b)=>a-b);
+  let cur=state.diagMonth;if(cur==null)cur=months[months.length-1];
+  let idx=months.indexOf(cur);idx+=(dir==="next"?1:-1);if(idx<0)idx=0;if(idx>=months.length)idx=months.length-1;
+  state.diagMonth=months[idx];
+  let last=-1;for(let i=0;i<dates.length;i++)if(dates[i].getFullYear()*12+dates[i].getMonth()===state.diagMonth)last=i;
+  state.diagDay=last;state.diagPage=0;renderActive();
+}
+function exportDiag(){
+  const d=fc();let rows,label;
+  if((state.diagGran||"sem")==="sem"){
+    const ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks;let sel=state.diagWeek;if(sel==null||sel>=weeks.length)sel=weeks.length-1;
+    const w=weeks[sel],prev=sel>0?weeks[sel-1]:null;
+    rows=diagMoversRows(d,c=>wkSum(c,w.date),c=>prev?wkSum(c,prev.date):0);
+    label="semana_"+w.date.toLocaleDateString("es-ES").split(String.fromCharCode(47)).join("-");
+  }else{
+    const j=state.diagDay,jp=j>0?j-1:null;
+    rows=diagMoversRows(d,c=>daySum(c,j),c=>jp!=null?daySum(c,jp):0);
+    label="dia_"+MODEL.dates[j].toLocaleDateString("es-ES").split(String.fromCharCode(47)).join("-");
+  }
+  const lines=[["Cliente","Comercial","Anterior","Actual","Variacion"]];
+  rows.forEach(r=>lines.push([r.name,r.comercial,r.prev,r.cur,r.delta]));
   const csv=lines.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join(String.fromCharCode(10));
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="diagnostico_semana_"+M.toLocaleDateString("es-ES").split(String.fromCharCode(47)).join("-")+".csv";a.click();URL.revokeObjectURL(url);
+  a.href=url;a.download="diagnostico_"+label+".csv";a.click();URL.revokeObjectURL(url);
 }
 function renderDiagnostico(){
   if(!MODEL)return '<div class="empty">Cargando…</div>';
-  const d=fc(),ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks;
+  const d=fc(),ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks,perDay=ag.perDay,dates=MODEL.dates;
   if(!weeks.length)return '<div class="empty">Sin datos</div>';
-  let sel=state.diagWeek;if(sel==null||sel<0||sel>=weeks.length){sel=weeks.length-1;while(sel>0&&weeks[sel].dias<4)sel--;}
-  state.diagWeek=sel;const mode=state.diagMode||"total";
-  const fw=weeks.map(w=>festWeek(w.date)),w=weeks[sel],prev=sel>0?weeks[sel-1]:null;
-  const fest=fw[sel],semLabel=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
-  const netD=w.sum-(prev?prev.sum:0);
-  const allD=d.map(c=>wkSum(c,w.date)-(prev?wkSum(c,prev.date):0));
-  const subT=allD.filter(x=>x>0).reduce((a,b)=>a+b,0),cayT=allD.filter(x=>x<0).reduce((a,b)=>a+b,0);
-  const note=w.dias<4?'<span class="tag amber">Semana en curso (incompleta)</span>':(fest.length?'<span class="tag amber">Festivo: '+fest.map(f=>esc(f.nombre)).join(", ")+" · "+w.dias+' días op.</span>':'<span class="tag gray">'+w.dias+' días op.</span>');
-  const badge=(lab,v,col)=>'<div class="gbadge"><div class="gblab">'+lab+'</div><div class="gbval" style="color:'+(col||"inherit")+'">'+v+'</div></div>';
-  return '<div class="blk"><div class="blkhd"><span class="eyebrow">Diagnóstico</span><h2>¿Por qué se movió el volumen?</h2><span class="hint">Haz clic en una semana del gráfico para ver qué clientes la movieron.</span></div>'
-    +'<div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span class="gblab">Envíos por semana</span><div class="cfilter" style="margin-left:auto"><button data-diagmode="total" aria-pressed="'+(mode==="total")+'">Total</button><button data-diagmode="dia" aria-pressed="'+(mode==="dia")+'">Por día operativo</button></div></div>'+diagChart(weeks,fw,sel,mode)+'<div style="font-size:11px;color:var(--muted);margin-top:4px"><span style="color:var(--amber)">●</span> semana con festivo</div></div>'
-    +'<div class="blk"><div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px"><h2 style="font-size:15px;margin:0">Semana del '+semLabel+'</h2>'+note+'</div>'
-    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">'+badge("Total envíos",fmt(w.sum),"")+badge("Subieron",(subT>0?"+":"")+fmt(subT),"var(--green)")+badge("Cayeron",fmt(cayT),"var(--red)")+badge("Neto vs sem. pasada",(netD>0?"+":"")+fmt(netD),(netD>=0?"var(--green)":"var(--red)"))+'</div>'
-    +'<div class="gblab" style="margin-bottom:8px">¿Qué cambió? · quién movió la semana frente a la anterior</div>'+diagMovers(d,weeks,sel)+'<div style="margin-top:14px"><button class="bajabtn" data-export>Exportar esta semana a Excel</button></div></div></div></div>';
+  const gran=state.diagGran||"sem";
+  const toggle='<div class="cfilter" style="margin-left:auto"><button data-gran="sem" aria-pressed="'+(gran==="sem")+'">Semanal</button><button data-gran="dia" aria-pressed="'+(gran==="dia")+'">Diario</button></div>';
+  let chartTitle,chartHtml,headLabel,note,periodTotal,prevTotal,rows;
+  if(gran==="sem"){
+    let sel=state.diagWeek;if(sel==null||sel<0||sel>=weeks.length){sel=weeks.length-1;while(sel>0&&weeks[sel].dias<4)sel--;}state.diagWeek=sel;
+    const fw=weeks.map(w=>festWeek(w.date)),w=weeks[sel],prev=sel>0?weeks[sel-1]:null,fest=fw[sel];
+    chartTitle="Envíos por semana";chartHtml=diagWeeklyChart(weeks,fw,sel);
+    headLabel="Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    note=w.dias<4?'<span class="tag amber">Semana en curso (incompleta)</span>':(fest.length?'<span class="tag amber">Festivo: '+fest.map(f=>esc(f.nombre)).join(", ")+" · "+w.dias+' días op.</span>':'<span class="tag gray">'+w.dias+' días op.</span>');
+    periodTotal=w.sum;prevTotal=prev?prev.sum:0;
+    rows=diagMoversRows(d,c=>wkSum(c,w.date),c=>prev?wkSum(c,prev.date):0);
+  }else{
+    const months=[...new Set(dates.map(dt=>dt.getFullYear()*12+dt.getMonth()))].sort((a,b)=>a-b);
+    let ym=state.diagMonth;if(ym==null||months.indexOf(ym)<0)ym=months[months.length-1];state.diagMonth=ym;
+    const dayIdx=[];for(let i=0;i<dates.length;i++)if(dates[i].getFullYear()*12+dates[i].getMonth()===ym)dayIdx.push(i);
+    let selDay=state.diagDay;if(selDay==null||dayIdx.indexOf(selDay)<0)selDay=dayIdx[dayIdx.length-1];state.diagDay=selDay;
+    const jp=selDay>0?selDay-1:null;
+    chartTitle="Envíos por día";chartHtml=diagDailyChart(dayIdx,perDay,dates,selDay,ym,months);
+    headLabel="Día "+dates[selDay].toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    note='<span class="tag gray">jornada operativa</span>';
+    periodTotal=perDay[selDay];prevTotal=jp!=null?perDay[jp]:0;
+    rows=diagMoversRows(d,c=>daySum(c,selDay),c=>jp!=null?daySum(c,jp):0);
+  }
+  return '<div class="blk"><div class="blkhd"><span class="eyebrow">Diagnóstico</span><h2>¿Por qué se movió el volumen?</h2><span class="hint">Haz clic en una '+(gran==="dia"?"día":"semana")+' del gráfico para ver qué clientes la movieron.</span></div>'
+    +'<div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span class="gblab">'+chartTitle+'</span>'+toggle+'</div>'+chartHtml+'</div>'
+    +'<div class="blk"><div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px"><h2 style="font-size:15px;margin:0">'+headLabel+'</h2>'+note+'</div>'
+    +diagBadges(rows,periodTotal,prevTotal)
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="gblab">¿Qué cambió? · solo clientes que variaron</span><button class="bajabtn" style="margin-left:auto" data-export>Exportar a Excel</button></div>'
+    +diagTable(rows)+'</div></div></div>';
 }
 
 const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
@@ -872,9 +930,12 @@ $("#panels").addEventListener("click",e=>{
    const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
    const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
    const gca=e.target.closest("[data-grupo-cancel]");if(gca){state.agruparModal=false;renderActive();return}
-   const dw=e.target.closest("[data-week]");if(dw){state.diagWeek=Number(dw.dataset.week);renderActive();return}
-   const dgm=e.target.closest("[data-diagmode]");if(dgm){state.diagMode=dgm.dataset.diagmode;renderActive();return}
-   const dgx=e.target.closest("[data-export]");if(dgx){exportDiagWeek();return}
+   const dw=e.target.closest("[data-week]");if(dw){state.diagWeek=Number(dw.dataset.week);state.diagPage=0;renderActive();return}
+   const dgr=e.target.closest("[data-gran]");if(dgr){state.diagGran=dgr.dataset.gran;state.diagPage=0;renderActive();return}
+   const dmo=e.target.closest("[data-month]");if(dmo){diagMonthNav(dmo.dataset.month);return}
+   const dda=e.target.closest("[data-day]");if(dda){state.diagDay=Number(dda.dataset.day);state.diagPage=0;renderActive();return}
+   const dpg=e.target.closest("[data-page]");if(dpg){state.diagPage=(state.diagPage||0)+Number(dpg.dataset.page);renderActive();return}
+   const dgx=e.target.closest("[data-export]");if(dgx){exportDiag();return}
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
   if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
