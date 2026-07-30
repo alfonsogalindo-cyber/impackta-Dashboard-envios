@@ -279,7 +279,7 @@ tr.isgroup{background:var(--bg-2)}
 /* ===== CONFIG ===== */
 const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
-const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";const API_FESTIVOS="/api/festivos";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
 CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
 CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
@@ -390,7 +390,7 @@ const fmt1=n=>n.toLocaleString("es-ES",{maximumFractionDigits:1});
 const pctSign=n=>n==null?"—":(n>0?"+":"")+Math.round(n)+"%";
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 /* ===== BAJAS (clientes dados de baja) — compartidas vía Cloudflare KV, con respaldo local ===== */
-let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";let GRUPOS=[], GRUPOS_SRC="local";let SEL={};   // "kv" si las lee del backend compartido
+let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";let GRUPOS=[], GRUPOS_SRC="local";let SEL={};let FESTIVOS=[];   // "kv" si las lee del backend compartido
 const keyOf=c=>c.cod||c.name;
 const isBaja=c=>BAJAS.has(keyOf(c));const isNuevo=c=>NUEVOS.has(keyOf(c));
 function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}catch(e){NUEVOS_SRC="local"}}
@@ -541,6 +541,7 @@ const TABS=[
   {id:"segmentacion",label:"Segmentación"},
   {id:"altas",label:"Altas y cartera"},
   {id:"clientes",label:"Clientes y bajas"},
+  {id:"diagnostico",label:"Diagnóstico"},
 ];
 function kpiCard(c){return `<div class="kpi${c.accent?' accent':''}">
   <div class="lab">${c.ic?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${c.ic}</svg>`:""}${c.lab}</div>
@@ -766,7 +767,117 @@ function renderClientes(){
   }
   return head+body+`</div>`+(state.agruparModal?renderAgruparModal():"");
 }
-const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes};
+async function syncFestivos(){try{const r=await fetch(API_FESTIVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();FESTIVOS=Array.isArray(j.festivos)?j.festivos:[];if(MODEL&&state.tab==="diagnostico")renderActive();}catch(e){}}
+function festWeek(M){const s=+M,e=s+6*864e5;return (FESTIVOS||[]).filter(f=>{const t=+new Date(f.fecha+"T00:00:00");return t>=s&&t<=e;});}
+function wkSum(c,M){if(!c.weekly)return 0;const w=c.weekly.find(x=>+x.date===+M);return w?w.sum:0;}
+function daySum(c,j){return (j>=c.altaIdx&&j<c.altaIdx+c.ramp.length)?c.ramp[j-c.altaIdx]:0;}
+function monthLabel(ym){const y=Math.floor(ym/12),m=ym%12;var s=new Date(y,m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"});return s.charAt(0).toUpperCase()+s.slice(1);}
+function diagWeeklyChart(weeks,fw,sel){
+  const W=840,H=230,P={l:42,r:14,t:16,b:32};
+  const vals=weeks.map(w=>w.sum),max=Math.max.apply(null,vals.concat([1]))*1.14,n=weeks.length,bw=(W-P.l-P.r)/n;
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const yl=Array.from({length:5},(_,i)=>{const v=max/4*i;return '<text x="'+(P.l-6)+'" y="'+(iy(v)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--muted)">'+fmt(v)+'</text><line x1="'+P.l+'" y1="'+iy(v).toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+iy(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';}).join("");
+  const ev=Math.ceil(n/9);
+  const bars=weeks.map((w,i)=>{const x=P.l+i*bw,y=iy(w.sum),ht=Math.max(0,H-P.b-y),isSel=i===sel,f=fw[i].length>0;
+    return '<g data-week="'+i+'" style="cursor:pointer"><rect x="'+x.toFixed(1)+'" y="'+P.t+'" width="'+bw.toFixed(1)+'" height="'+(H-P.b-P.t)+'" fill="transparent"/><rect x="'+(x+1.5).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-3).toFixed(1)+'" height="'+ht.toFixed(1)+'" rx="2" fill="'+(isSel?"var(--blue)":"var(--ink-2)")+'" opacity="'+(isSel?"1":"0.4")+'"/>'+(f?'<circle cx="'+(x+bw/2).toFixed(1)+'" cy="'+(H-P.b+9)+'" r="2.6" fill="var(--amber)"/>':"")+(i%ev===0?'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-P.b+20)+'" text-anchor="middle" font-size="9" fill="var(--muted)">'+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"})+'</text>':"")+'</g>';}).join("");
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Envios por semana">'+yl+bars+'</svg><div style="font-size:11px;color:var(--muted);margin-top:4px"><span style="color:var(--amber)">●</span> semana con festivo</div>';
+}
+function diagDailyChart(dayIdx,perDay,dates,selDay,ym,months){
+  const idx=months.indexOf(ym);
+  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button></div>';
+  if(!dayIdx.length)return nav+'<div class="empty">Sin días operativos este mes.</div>';
+  const W=840,H=210,P={l:42,r:14,t:14,b:26};
+  const vals=dayIdx.map(j=>perDay[j]),max=Math.max.apply(null,vals.concat([1]))*1.14,n=dayIdx.length,bw=(W-P.l-P.r)/n;
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const yl=Array.from({length:4},(_,i)=>{const v=max/3*i;return '<text x="'+(P.l-6)+'" y="'+(iy(v)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--muted)">'+fmt(v)+'</text><line x1="'+P.l+'" y1="'+iy(v).toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+iy(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';}).join("");
+  const ev=Math.ceil(n/14);
+  const bars=dayIdx.map((j,i)=>{const x=P.l+i*bw,y=iy(perDay[j]),ht=Math.max(0,H-P.b-y),isSel=j===selDay;
+    return '<g data-day="'+j+'" style="cursor:pointer"><rect x="'+x.toFixed(1)+'" y="'+P.t+'" width="'+bw.toFixed(1)+'" height="'+(H-P.b-P.t)+'" fill="transparent"/><rect x="'+(x+1).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+ht.toFixed(1)+'" rx="2" fill="'+(isSel?"var(--blue)":"var(--ink-2)")+'" opacity="'+(isSel?"1":"0.4")+'"/>'+(i%ev===0?'<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-P.b+16)+'" text-anchor="middle" font-size="9" fill="var(--muted)">'+dates[j].getDate()+'</text>':"")+'</g>';}).join("");
+  return nav+'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Envios por dia">'+yl+bars+'</svg>';
+}
+function diagMoversRows(d,curFn,prevFn){
+  const rows=d.map(c=>{const cur=curFn(c),prev=prevFn(c);return {name:c.name,comercial:c.comercial,cur,prev,delta:cur-prev,isGroup:c.isGroup};}).filter(r=>r.delta!==0);
+  rows.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  return rows;
+}
+function diagBadges(rows,periodTotal,prevTotal){
+  const subT=rows.filter(r=>r.delta>0).reduce((a,b)=>a+b.delta,0),cayT=rows.filter(r=>r.delta<0).reduce((a,b)=>a+b.delta,0),netD=periodTotal-prevTotal;
+  const unit=(state.diagGran==="dia")?"día anterior":"sem. pasada";
+  const badge=(lab,v,col)=>'<div class="gbadge"><div class="gblab">'+lab+'</div><div class="gbval" style="color:'+(col||"inherit")+'">'+v+'</div></div>';
+  return '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">'+badge("Total envíos",fmt(periodTotal),"")+badge("Subieron",(subT>0?"+":"")+fmt(subT),"var(--green)")+badge("Cayeron",fmt(cayT),"var(--red)")+badge("Neto vs "+unit,(netD>0?"+":"")+fmt(netD),(netD>=0?"var(--green)":"var(--red)"))+'</div>';
+}
+function diagTable(rows){
+  const per=10,pages=Math.max(1,Math.ceil(rows.length/per));let pg=state.diagPage||0;if(pg>=pages)pg=pages-1;if(pg<0)pg=0;state.diagPage=pg;
+  const unit=(state.diagGran==="dia")?"jornada":"semana";
+  if(!rows.length)return '<div style="color:var(--muted);font-size:12px;padding:8px">Ningún cliente varió esta '+unit+'.</div>';
+  const slice=rows.slice(pg*per,pg*per+per);
+  const head='<div class="grow ghead2"><span style="flex:1">Cliente</span><span style="width:90px">Comercial</span><span style="width:120px;text-align:right">Anterior → Actual</span><span style="width:70px;text-align:right">Variación</span></div>';
+  const body=slice.map(r=>'<div class="grow"><span style="flex:1">'+esc(r.name)+(r.isGroup?' <span class="tag blue" style="font-size:9px">grupo</span>':"")+'</span><span style="width:90px;color:var(--muted);font-size:11px">'+esc(r.comercial)+'</span><span style="width:120px;text-align:right;color:var(--muted);font-size:11px">'+fmt(r.prev)+" → "+fmt(r.cur)+'</span><span style="width:70px;text-align:right;font-weight:600" class="c-'+(r.delta<0?"red":"green")+'">'+(r.delta>0?"+":"")+fmt(r.delta)+'</span></div>').join("");
+  const nav=pages>1?'<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px"><button class="bajabtn" data-page="-1"'+(pg<=0?" disabled":"")+'>‹</button><span style="font-size:12px;color:var(--muted)">Página '+(pg+1)+' de '+pages+'</span><button class="bajabtn" data-page="1"'+(pg>=pages-1?" disabled":"")+'>›</button></div>':"";
+  return head+body+nav+'<div style="font-size:11px;color:var(--muted);margin-top:6px">'+rows.length+' clientes variaron esta '+unit+'</div>';
+}
+function diagMonthNav(dir){
+  const dates=MODEL.dates,months=[...new Set(dates.map(d=>d.getFullYear()*12+d.getMonth()))].sort((a,b)=>a-b);
+  let cur=state.diagMonth;if(cur==null)cur=months[months.length-1];
+  let idx=months.indexOf(cur);idx+=(dir==="next"?1:-1);if(idx<0)idx=0;if(idx>=months.length)idx=months.length-1;
+  state.diagMonth=months[idx];
+  let last=-1;for(let i=0;i<dates.length;i++)if(dates[i].getFullYear()*12+dates[i].getMonth()===state.diagMonth)last=i;
+  state.diagDay=last;state.diagPage=0;renderActive();
+}
+function exportDiag(){
+  const d=fc();let rows,label;
+  if((state.diagGran||"sem")==="sem"){
+    const ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks;let sel=state.diagWeek;if(sel==null||sel>=weeks.length)sel=weeks.length-1;
+    const w=weeks[sel],prev=sel>0?weeks[sel-1]:null;
+    rows=diagMoversRows(d,c=>wkSum(c,w.date),c=>prev?wkSum(c,prev.date):0);
+    label="semana_"+w.date.toLocaleDateString("es-ES").split(String.fromCharCode(47)).join("-");
+  }else{
+    const j=state.diagDay,jp=j>0?j-1:null;
+    rows=diagMoversRows(d,c=>daySum(c,j),c=>jp!=null?daySum(c,jp):0);
+    label="dia_"+MODEL.dates[j].toLocaleDateString("es-ES").split(String.fromCharCode(47)).join("-");
+  }
+  const lines=[["Cliente","Comercial","Anterior","Actual","Variacion"]];
+  rows.forEach(r=>lines.push([r.name,r.comercial,r.prev,r.cur,r.delta]));
+  const csv=lines.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join(String.fromCharCode(10));
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="diagnostico_"+label+".csv";a.click();URL.revokeObjectURL(url);
+}
+function renderDiagnostico(){
+  if(!MODEL)return '<div class="empty">Cargando…</div>';
+  const d=fc(),ag=aggregate(d,MODEL.dates),weeks=ag.gWeeks,perDay=ag.perDay,dates=MODEL.dates;
+  if(!weeks.length)return '<div class="empty">Sin datos</div>';
+  const gran=state.diagGran||"sem";
+  const toggle='<div class="cfilter" style="margin-left:auto"><button data-gran="sem" aria-pressed="'+(gran==="sem")+'">Semanal</button><button data-gran="dia" aria-pressed="'+(gran==="dia")+'">Diario</button></div>';
+  let chartTitle,chartHtml,headLabel,note,periodTotal,prevTotal,rows;
+  if(gran==="sem"){
+    let sel=state.diagWeek;if(sel==null||sel<0||sel>=weeks.length){sel=weeks.length-1;while(sel>0&&weeks[sel].dias<4)sel--;}state.diagWeek=sel;
+    const fw=weeks.map(w=>festWeek(w.date)),w=weeks[sel],prev=sel>0?weeks[sel-1]:null,fest=fw[sel];
+    chartTitle="Envíos por semana";chartHtml=diagWeeklyChart(weeks,fw,sel);
+    headLabel="Semana del "+w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    note=w.dias<4?'<span class="tag amber">Semana en curso (incompleta)</span>':(fest.length?'<span class="tag amber">Festivo: '+fest.map(f=>esc(f.nombre)).join(", ")+" · "+w.dias+' días op.</span>':'<span class="tag gray">'+w.dias+' días op.</span>');
+    periodTotal=w.sum;prevTotal=prev?prev.sum:0;
+    rows=diagMoversRows(d,c=>wkSum(c,w.date),c=>prev?wkSum(c,prev.date):0);
+  }else{
+    const months=[...new Set(dates.map(dt=>dt.getFullYear()*12+dt.getMonth()))].sort((a,b)=>a-b);
+    let ym=state.diagMonth;if(ym==null||months.indexOf(ym)<0)ym=months[months.length-1];state.diagMonth=ym;
+    const dayIdx=[];for(let i=0;i<dates.length;i++)if(dates[i].getFullYear()*12+dates[i].getMonth()===ym)dayIdx.push(i);
+    let selDay=state.diagDay;if(selDay==null||dayIdx.indexOf(selDay)<0)selDay=dayIdx[dayIdx.length-1];state.diagDay=selDay;
+    const jp=selDay>0?selDay-1:null;
+    chartTitle="Envíos por día";chartHtml=diagDailyChart(dayIdx,perDay,dates,selDay,ym,months);
+    headLabel="Día "+dates[selDay].toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    note='<span class="tag gray">jornada operativa</span>';
+    periodTotal=perDay[selDay];prevTotal=jp!=null?perDay[jp]:0;
+    rows=diagMoversRows(d,c=>daySum(c,selDay),c=>jp!=null?daySum(c,jp):0);
+  }
+  return '<div class="blk"><div class="blkhd"><span class="eyebrow">Diagnóstico</span><h2>¿Por qué se movió el volumen?</h2><span class="hint">Haz clic en una '+(gran==="dia"?"día":"semana")+' del gráfico para ver qué clientes la movieron.</span></div>'
+    +'<div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span class="gblab">'+chartTitle+'</span>'+toggle+'</div>'+chartHtml+'</div>'
+    +'<div class="blk"><div class="panel" style="padding:14px 16px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px"><h2 style="font-size:15px;margin:0">'+headLabel+'</h2>'+note+'</div>'
+    +diagBadges(rows,periodTotal,prevTotal)
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="gblab">¿Qué cambió? · solo clientes que variaron</span><button class="bajabtn" style="margin-left:auto" data-export>Exportar a Excel</button></div>'
+    +diagTable(rows)+'</div></div></div>';
+}
+
+const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
 
 function renderTabs(){
   $("#tabbar").innerHTML=TABS.map(t=>{let badge="";
@@ -819,6 +930,12 @@ $("#panels").addEventListener("click",e=>{
    const ug=e.target.closest("[data-ungroup]");if(ug){ungroupGroup(Number(ug.dataset.ungroup));return}
    const gcr=e.target.closest("[data-grupo-crear]");if(gcr){const inp=document.getElementById("gname");createGroup(inp?inp.value:"");return}
    const gca=e.target.closest("[data-grupo-cancel]");if(gca){state.agruparModal=false;renderActive();return}
+   const dw=e.target.closest("[data-week]");if(dw){state.diagWeek=Number(dw.dataset.week);state.diagPage=0;renderActive();return}
+   const dgr=e.target.closest("[data-gran]");if(dgr){state.diagGran=dgr.dataset.gran;state.diagPage=0;renderActive();return}
+   const dmo=e.target.closest("[data-month]");if(dmo){diagMonthNav(dmo.dataset.month);return}
+   const dda=e.target.closest("[data-day]");if(dda){state.diagDay=Number(dda.dataset.day);state.diagPage=0;renderActive();return}
+   const dpg=e.target.closest("[data-page]");if(dpg){state.diagPage=(state.diagPage||0)+Number(dpg.dataset.page);renderActive();return}
+   const dgx=e.target.closest("[data-export]");if(dgx){exportDiag();return}
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
   if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
@@ -835,7 +952,7 @@ $("#theme").addEventListener("click",()=>{const cur=document.documentElement.get
 loadBajasLocal();loadNuevosLocal();
 boot();
 loadLive();
-syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();
+syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();syncFestivos();
 </script>
 </body>
 </html>
