@@ -771,7 +771,7 @@ async function syncFestivos(){try{const r=await fetch(API_FESTIVOS,{cache:"no-st
 function festWeek(M){const s=+M,e=s+6*864e5;return (FESTIVOS||[]).filter(f=>{const t=+new Date(f.fecha+"T00:00:00");return t>=s&&t<=e;});}
 function wkSum(c,M){if(!c.weekly)return 0;const w=c.weekly.find(x=>+x.date===+M);return w?w.sum:0;}
 function daySum(c,j){return (j>=c.altaIdx&&j<c.altaIdx+c.ramp.length)?c.ramp[j-c.altaIdx]:0;}
-function monthLabel(ym){const y=Math.floor(ym/12),m=ym%12;return new Date(y,m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"});}
+function monthLabel(ym){const y=Math.floor(ym/12),m=ym%12;var s=new Date(y,m,1).toLocaleDateString("es-ES",{month:"long",year:"numeric"});return s.charAt(0).toUpperCase()+s.slice(1);}
 function diagWeeklyChart(weeks,fw,sel){
   const W=840,H=230,P={l:42,r:14,t:16,b:32};
   const vals=weeks.map(w=>w.sum),max=Math.max.apply(null,vals.concat([1]))*1.14,n=weeks.length,bw=(W-P.l-P.r)/n;
@@ -784,7 +784,7 @@ function diagWeeklyChart(weeks,fw,sel){
 }
 function diagDailyChart(dayIdx,perDay,dates,selDay,ym,months){
   const idx=months.indexOf(ym);
-  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center;text-transform:capitalize">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button></div>';
+  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button></div>';
   if(!dayIdx.length)return nav+'<div class="empty">Sin días operativos este mes.</div>';
   const W=840,H=210,P={l:42,r:14,t:14,b:26};
   const vals=dayIdx.map(j=>perDay[j]),max=Math.max.apply(null,vals.concat([1]))*1.14,n=dayIdx.length,bw=(W-P.l-P.r)/n;
