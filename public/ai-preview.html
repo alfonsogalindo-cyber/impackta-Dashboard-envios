@@ -936,6 +936,7 @@ async function aiSend(preset){
 function buildAIContext(){
   if(!MODEL)return "";
   var d=fc(), ag=aggregate(d,MODEL.dates), weeks=ag.gWeeks, L=[];
+  L.push("NOTA DE ROLES: 'comercial' es el vendedor de Impackta (Judith, Noelia, Susana o Interno) que gestiona y es PROPIETARIO de la cuenta, NO un contacto del cliente. Es quien debe hacer el seguimiento o llamar al cliente.");
   var totAll=fcAll().reduce(function(a,b){return a+b.total;},0);
   var wc=d.filter(function(x){return x.comp!=null;}), cumplen=wc.filter(function(x){return x.cumpl>=90;}).length;
   var pct=wc.length?Math.round(cumplen/wc.length*100):0;
@@ -944,20 +945,20 @@ function buildAIContext(){
   if(weeks.length){
     var sel=weeks.length-1; while(sel>0&&weeks[sel].dias<4)sel--;
     var w=weeks[sel], prev=sel>0?weeks[sel-1]:null;
-    var mv=d.map(function(c){var cur=wkSum(c,w.date),pv=prev?wkSum(c,prev.date):0;return {n:c.name,cur:cur,prev:pv,delta:cur-pv};}).filter(function(x){return x.delta!==0;}).sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta);});
+    var mv=d.map(function(c){var cur=wkSum(c,w.date),pv=prev?wkSum(c,prev.date):0;return {n:c.name,com:c.comercial,cur:cur,prev:pv,delta:cur-pv};}).filter(function(x){return x.delta!==0;}).sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta);});
     var wl=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
     var fest=(typeof festWeek==="function")?festWeek(w.date):[];
     L.push("ULTIMA SEMANA COMPLETA (del "+wl+", "+w.dias+" dias operativos"+(fest.length?", CON FESTIVO: "+fest.map(function(f){return f.nombre;}).join(", "):"")+"): total "+w.sum+" envios, semana anterior "+(prev?prev.sum:0)+", diferencia neta "+(w.sum-(prev?prev.sum:0))+".");
-    L.push("Mayores CAIDAS de la semana (cliente, anterior->actual, variacion): "+mv.filter(function(m){return m.delta<0;}).slice(0,8).map(function(m){return m.n+" ("+m.prev+"->"+m.cur+", "+m.delta+")";}).join("; ")+".");
-    L.push("Mayores SUBIDAS de la semana: "+mv.filter(function(m){return m.delta>0;}).slice(0,8).map(function(m){return m.n+" ("+m.prev+"->"+m.cur+", +"+m.delta+")";}).join("; ")+".");
+    L.push("Mayores CAIDAS de la semana (cliente, comercial responsable, anterior->actual, variacion): "+mv.filter(function(m){return m.delta<0;}).slice(0,8).map(function(m){return m.n+" (comercial "+m.com+", "+m.prev+"->"+m.cur+", "+m.delta+")";}).join("; ")+".");
+    L.push("Mayores SUBIDAS de la semana: "+mv.filter(function(m){return m.delta>0;}).slice(0,8).map(function(m){return m.n+" (comercial "+m.com+", "+m.prev+"->"+m.cur+", +"+m.delta+")";}).join("; ")+".");
   }
   if(typeof riskScore==="function"){
     var risk=d.map(function(c){return {c:c,s:riskScore(c)};}).filter(function(x){return x.s>=2;}).sort(function(a,b){return b.s-a.s;}).slice(0,12);
-    if(risk.length)L.push("CLIENTES EN RIESGO, ordenados de mayor a menor (a quien llamar y por que): "+risk.map(function(x){return x.c.name+(typeof motivoRiesgo==="function"?" ["+motivoRiesgo(x.c)+"]":"");}).join("; ")+".");
+    if(risk.length)L.push("CLIENTES EN RIESGO, ordenados de mayor a menor (indica que el comercial responsable debe llamarles y por que): "+risk.map(function(x){return x.c.name+" (comercial responsable: "+x.c.comercial+")"+(typeof motivoRiesgo==="function"?" ["+motivoRiesgo(x.c)+"]":"");}).join("; ")+".");
   }
   if(typeof GRUPOS!=="undefined"&&GRUPOS&&GRUPOS.length)L.push("GRUPOS de clientes activos: "+GRUPOS.map(function(g){return g.nombre+" ("+(g.miembros?g.miembros.length:0)+" empresas)";}).join("; ")+".");
-  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
-  L.push("DETALLE DE TODOS LOS CLIENTES (formato nombre|comercial|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
+  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
+  L.push("DETALLE DE TODOS LOS CLIENTES (formato nombre|comercial propietario|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
   return L.join("\n");
 }
 
