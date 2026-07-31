@@ -236,7 +236,30 @@ tr.isgroup{background:var(--bg-2)}
 .gblab{font-size:11px;color:var(--ink-2)}
 .gbval{font-size:18px;font-weight:600}
 .gmodal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:80}
-.gmodal{background:var(--card);border-radius:14px;padding:22px;width:360px;border:1px solid var(--line)}</style>
+.gmodal{background:var(--card);border-radius:14px;padding:22px;width:360px;border:1px solid var(--line)}#ai-drawer{position:fixed;top:0;right:0;width:380px;max-width:90vw;height:100vh;background:var(--card);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1);z-index:120;display:flex;flex-direction:column;box-shadow:-14px 0 44px rgba(0,0,0,.20)}
+  body.ai-open #ai-drawer{transform:translateX(0)}
+  body>header,body>.wrap{transition:margin-right .3s cubic-bezier(.16,1,.3,1)}
+  body.ai-open>header,body.ai-open>.wrap{margin-right:380px}
+  #ai-backdrop{position:fixed;inset:0;z-index:110;display:none}
+  body.ai-open #ai-backdrop{display:block}
+  .ai-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .ai-hd b{font-size:14px}
+  .ai-hd .ai-sub{font-size:11.5px;color:var(--muted)}
+  .ai-x{margin-left:auto;background:transparent;border:none;font-size:24px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+  .ai-suggest{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .ai-suggest button{font-size:11.5px;border:1px solid var(--line);background:transparent;color:var(--ink-2);border-radius:16px;padding:5px 11px;cursor:pointer;transition:background .15s}
+  .ai-suggest button:hover{background:var(--bg-2)}
+  .ai-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-height:0}
+  .ai-msg{font-size:13px;line-height:1.55;padding:10px 13px;border-radius:13px;max-width:92%;word-wrap:break-word}
+  .ai-user{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+  .ai-bot{align-self:flex-start;background:var(--bg-2);color:var(--ink);border-bottom-left-radius:4px}
+  .ai-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:flex-end;flex-shrink:0}
+  .ai-input-row textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:11px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--ink);max-height:120px;line-height:1.4}
+  .ai-send{background:var(--blue);border:none;color:#fff;border-radius:11px;min-width:40px;height:38px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  #ai-open svg{width:16px;height:16px;margin-right:6px}
+  @media(max-width:760px){#ai-drawer{width:100vw;max-width:100vw}body.ai-open>header,body.ai-open>.wrap{margin-right:0}}
+
+</style>
 </head>
 <body>
 <header>
@@ -251,7 +274,8 @@ tr.isgroup{background:var(--bg-2)}
         <button class="icbtn" id="theme" aria-label="Cambiar tema" title="Modo claro / oscuro">
           <svg id="themeic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
         </button>
-        <button class="btn" id="refresh">
+        <button class="btn" id="ai-open" onclick="aiOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Asistente</button>
+          <button class="btn" id="refresh">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
           Actualizar
         </button>
@@ -279,7 +303,7 @@ tr.isgroup{background:var(--bg-2)}
 /* ===== CONFIG ===== */
 const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
-const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";const API_FESTIVOS="/api/festivos";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";const API_FESTIVOS="/api/festivos";const API_ASK="/api/ask";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
 CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
 CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
@@ -877,6 +901,67 @@ function renderDiagnostico(){
     +diagTable(rows)+'</div></div></div>';
 }
 
+const AICHAT=[];
+function aiOpen(){
+  document.body.classList.add("ai-open");
+  if(!AICHAT.length){ AICHAT.push({role:"bot",text:"Hola, soy el asistente del panel. Pregúntame por qué se movió el volumen, a quién deberías llamar, cómo va un cliente o grupo, o un resumen de la semana o el mes. Respondo solo con los datos reales del panel."}); renderAIChat(); }
+  const i=document.getElementById("ai-input"); if(i) setTimeout(function(){i.focus();},300);
+}
+function aiClose(){ document.body.classList.remove("ai-open"); }
+function aiKey(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); aiSend(); } }
+function aiFormat(t){
+  var s=esc(t);
+  s=s.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+  s=s.split("\n").map(function(l){ var m=l.match(/^\s*[-*]\s+(.*)$/); return m?"&bull; "+m[1]:l; }).join("<br>");
+  return s;
+}
+function renderAIChat(){
+  var el=document.getElementById("ai-msgs"); if(!el)return;
+  el.innerHTML=AICHAT.map(function(m){ return '<div class="ai-msg ai-'+m.role+'">'+(m.role==="user"?esc(m.text):aiFormat(m.text))+'</div>'; }).join("");
+  el.scrollTop=el.scrollHeight;
+}
+async function aiSend(preset){
+  var inp=document.getElementById("ai-input");
+  var q=(preset||(inp?inp.value:"")||"").trim(); if(!q)return;
+  if(inp&&!preset)inp.value="";
+  AICHAT.push({role:"user",text:q}); AICHAT.push({role:"bot",text:"…"}); renderAIChat();
+  try{
+    var ctx=buildAIContext();
+    var r=await fetch(API_ASK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,context:ctx})});
+    var j=await r.json();
+    AICHAT[AICHAT.length-1].text=j.answer||("No pude responder: "+(j.error||"error desconocido"));
+  }catch(e){ AICHAT[AICHAT.length-1].text="Error de conexión con la IA. Reinténtalo en un momento."; }
+  renderAIChat();
+}
+function buildAIContext(){
+  if(!MODEL)return "";
+  var d=fc(), ag=aggregate(d,MODEL.dates), weeks=ag.gWeeks, L=[];
+  L.push("NOTA DE ROLES: 'comercial' es el vendedor de Impackta (Judith, Noelia, Susana o Interno) que gestiona y es PROPIETARIO de la cuenta, NO un contacto del cliente. Es quien debe hacer el seguimiento o llamar al cliente.");
+  var totAll=fcAll().reduce(function(a,b){return a+b.total;},0);
+  var wc=d.filter(function(x){return x.comp!=null;}), cumplen=wc.filter(function(x){return x.cumpl>=90;}).length;
+  var pct=wc.length?Math.round(cumplen/wc.length*100):0;
+  var comSel=state.comercial!=="Todos"?(" (vista filtrada por comercial "+state.comercial+")"):"";
+  L.push("RESUMEN GLOBAL"+comSel+": envios totales del periodo "+totAll+"; cuentas activas "+d.length+" ("+wc.length+" con compromiso); cartera en cumplimiento "+pct+"% ("+cumplen+" de "+wc.length+" cumplen 90% o mas); variacion semanal WoW "+(ag.wowG==null?"n/d":Math.round(ag.wowG)+"%")+"; variacion mensual MoM "+(ag.momG==null?"n/d":Math.round(ag.momG)+"%")+".");
+  if(weeks.length){
+    var sel=weeks.length-1; while(sel>0&&weeks[sel].dias<4)sel--;
+    var w=weeks[sel], prev=sel>0?weeks[sel-1]:null;
+    var mv=d.map(function(c){var cur=wkSum(c,w.date),pv=prev?wkSum(c,prev.date):0;return {n:c.name,com:c.comercial,cur:cur,prev:pv,delta:cur-pv};}).filter(function(x){return x.delta!==0;}).sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta);});
+    var wl=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    var fest=(typeof festWeek==="function")?festWeek(w.date):[];
+    L.push("ULTIMA SEMANA COMPLETA (del "+wl+", "+w.dias+" dias operativos"+(fest.length?", CON FESTIVO: "+fest.map(function(f){return f.nombre;}).join(", "):"")+"): total "+w.sum+" envios, semana anterior "+(prev?prev.sum:0)+", diferencia neta "+(w.sum-(prev?prev.sum:0))+".");
+    L.push("Mayores CAIDAS de la semana (cliente, comercial responsable, anterior->actual, variacion): "+mv.filter(function(m){return m.delta<0;}).slice(0,8).map(function(m){return m.n+" (comercial "+m.com+", "+m.prev+"->"+m.cur+", "+m.delta+")";}).join("; ")+".");
+    L.push("Mayores SUBIDAS de la semana: "+mv.filter(function(m){return m.delta>0;}).slice(0,8).map(function(m){return m.n+" (comercial "+m.com+", "+m.prev+"->"+m.cur+", +"+m.delta+")";}).join("; ")+".");
+  }
+  if(typeof riskScore==="function"){
+    var risk=d.map(function(c){return {c:c,s:riskScore(c)};}).filter(function(x){return x.s>=2;}).sort(function(a,b){return b.s-a.s;}).slice(0,12);
+    if(risk.length)L.push("CLIENTES EN RIESGO, ordenados de mayor a menor (indica que el comercial responsable debe llamarles y por que): "+risk.map(function(x){return x.c.name+" (comercial responsable: "+x.c.comercial+")"+(typeof motivoRiesgo==="function"?" ["+motivoRiesgo(x.c)+"]":"");}).join("; ")+".");
+  }
+  if(typeof GRUPOS!=="undefined"&&GRUPOS&&GRUPOS.length)L.push("GRUPOS de clientes activos: "+GRUPOS.map(function(g){return g.nombre+" ("+(g.miembros?g.miembros.length:0)+" empresas)";}).join("; ")+".");
+  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
+  L.push("DETALLE DE TODOS LOS CLIENTES (formato nombre|comercial propietario|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
+  return L.join("\n");
+}
+
 const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
 
 function renderTabs(){
@@ -954,6 +1039,18 @@ boot();
 loadLive();
 syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();syncFestivos();
 </script>
+<div id="ai-backdrop" onclick="aiClose()"></div>
+<aside id="ai-drawer" aria-label="Asistente del panel">
+  <div class="ai-hd"><div><b>Asistente del panel</b><div class="ai-sub">Responde con tus datos reales</div></div><button class="ai-x" onclick="aiClose()" aria-label="Cerrar">&times;</button></div>
+  <div class="ai-suggest">
+    <button onclick="aiSend('¿Por qué se movió el volumen esta semana?')">¿Por qué se movió el volumen?</button>
+    <button onclick="aiSend('¿A quién debería llamar? (clientes en riesgo)')">¿A quién llamar?</button>
+    <button onclick="aiSend('Resúmeme la semana para gerencia')">Resumen de la semana</button>
+  </div>
+  <div id="ai-msgs" class="ai-msgs"></div>
+  <div class="ai-input-row"><textarea id="ai-input" rows="1" placeholder="Escribe tu pregunta…" onkeydown="aiKey(event)"></textarea><button class="ai-send" onclick="aiSend()" aria-label="Enviar">&rarr;</button></div>
+</aside>
+
 </body>
 </html>
 
