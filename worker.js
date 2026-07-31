@@ -188,6 +188,74 @@ export default {
       return jsonRes({ error: "ningun modelo respondio", diag: diag }, 502);
     }
 
+    if (path === "/api/sync-hubspot" && request.method === "POST") {
+      if (!env.HUBSPOT_TOKEN) return jsonRes({ error: "HUBSPOT_TOKEN no configurado en el Worker (Settings > Variables and Secrets)" }, 500);
+      let body;
+      try { body = await request.json(); } catch { return jsonRes({ error: "json invalido" }, 400); }
+      const clients = Array.isArray(body.clients) ? body.clients : [];
+      if (!clients.length) return jsonRes({ error: "sin clientes en la peticion" }, 400);
+
+      const hsHeaders = { Authorization: "Bearer " + env.HUBSPOT_TOKEN, "Content-Type": "application/json" };
+      const now = new Date();
+      const todayMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+      const updatedIds = [];
+      const notFound = [];
+      const errors = [];
+      const CHUNK = 90;
+
+      for (let i = 0; i < clients.length; i += CHUNK) {
+        const chunk = clients.slice(i, i + CHUNK);
+        const codes = Array.from(new Set(chunk.map((c) => String(c.codigo))));
+        let idByCode = {};
+        try {
+          const searchRes = await fetch("https://api.hubapi.com/crm/v3/objects/companies/search", {
+            method: "POST",
+            headers: hsHeaders,
+            body: JSON.stringify({
+              filterGroups: [{ filters: [{ propertyName: "codigo_de_cliente", operator: "IN", values: codes }] }],
+              properties: ["codigo_de_cliente", "name"],
+              limit: 100,
+            }),
+          });
+          const searchJson = await searchRes.json();
+          if (!searchRes.ok) throw new Error(searchJson.message || "HubSpot search error " + searchRes.status);
+          (searchJson.results || []).forEach((r) => {
+            if (r.properties && r.properties.codigo_de_cliente) idByCode[String(r.properties.codigo_de_cliente)] = r.id;
+          });
+        } catch (e) {
+          errors.push("busqueda: " + e.message);
+          continue;
+        }
+
+        const inputs = [];
+        for (const c of chunk) {
+          const hsId = idByCode[String(c.codigo)];
+          if (!hsId) {
+            notFound.push({ codigo: c.codigo, nombre: c.nombre });
+            continue;
+          }
+          const props = Object.assign({}, c.properties, { gls_ultima_sincronizacion: String(todayMs) });
+          inputs.push({ id: hsId, properties: props });
+        }
+        if (!inputs.length) continue;
+        try {
+          const updRes = await fetch("https://api.hubapi.com/crm/v3/objects/companies/batch/update", {
+            method: "POST",
+            headers: hsHeaders,
+            body: JSON.stringify({ inputs }),
+          });
+          const updJson = await updRes.json();
+          if (!updRes.ok) throw new Error(updJson.message || "HubSpot batch update error " + updRes.status);
+          (updJson.results || []).forEach((r) => updatedIds.push(r.id));
+        } catch (e) {
+          errors.push("actualizacion: " + e.message);
+        }
+      }
+
+      return jsonRes({ updated: updatedIds.length, notFound: notFound, errors: errors });
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
