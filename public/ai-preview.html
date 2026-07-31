@@ -971,6 +971,17 @@ function hsEstado(c){
   return"No cumple";
 }
 function hsTendencia(sym){return sym==="↑"?"Sube":sym==="↓"?"Baja":"Estable";}
+function hsUltimoDia(c){
+  const N=MODEL.N,dates=MODEL.dates,j=N-1;
+  const envios=daySum(c,j);
+  const prev=[];
+  for(let k=N-6;k<=N-2;k++){if(k>=0)prev.push(daySum(c,k));}
+  const media=prev.length?prev.reduce(function(a,b){return a+b;},0)/prev.length:0;
+  const varPct=media>0?Math.round(((envios-media)/media)*100):null;
+  const d=dates[j];
+  const fecha=d?(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")):"";
+  return {envios:envios,varPct:varPct,fecha:fecha};
+}
 function buildHubspotSyncPayload(){
   if(!MODEL)return[];
   const all=typeof collapsedClients==="function"?collapsedClients():MODEL.clients;
@@ -978,6 +989,7 @@ function buildHubspotSyncPayload(){
   all.forEach(function(c){
     const codigo=c.isGroup?(c.miembros&&c.miembros[0]):c.cod;
     if(!codigo)return;
+    const ud=hsUltimoDia(c);
     out.push({
       codigo:String(codigo),
       nombre:c.name,
@@ -991,7 +1003,10 @@ function buildHubspotSyncPayload(){
         gls_dias_sin_envio:String(c.gapEnd!=null?c.gapEnd:0),
         gls_variacion_semanal_wow:c.wow==null?"":String(Math.round(c.wow*100)),
         gls_es_grupo:c.isGroup?"true":"false",
-        gls_num_empresas_grupo:c.isGroup?String(c.members.length):"0"
+        gls_num_empresas_grupo:c.isGroup?String(c.members.length):"0",
+        gls_envios_ultimo_dia:String(ud.envios),
+        gls_variacion_vs_media_5d:ud.varPct==null?"":String(ud.varPct),
+        gls_fecha_ultimo_dia:ud.fecha
       }
     });
   });
