@@ -274,7 +274,8 @@ tr.isgroup{background:var(--bg-2)}
         <button class="icbtn" id="theme" aria-label="Cambiar tema" title="Modo claro / oscuro">
           <svg id="themeic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M5 5l1.5 1.5M17.5 17.5L19 19M2 12h2M20 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
         </button>
-        <button class="btn" id="ai-open" onclick="aiOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Asistente</button>
+        <button class="btn" id="hs-sync" onclick="hsSyncNow()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Sincronizar HubSpot</button>
+          <button class="btn" id="ai-open" onclick="aiOpen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Asistente</button>
           <button class="btn" id="refresh">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
           Actualizar
@@ -303,7 +304,7 @@ tr.isgroup{background:var(--bg-2)}
 /* ===== CONFIG ===== */
 const SHEET_ID="10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU", SHEET_NAME="2026", YEAR=2026, INACT_DAYS=5;
 const gvizURL=()=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
-const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";const API_FESTIVOS="/api/festivos";const API_ASK="/api/ask";  // Pages Functions (proxy del Sheet + bajas compartidas)
+const API_SHEET="/api/sheet", API_BAJAS="/api/bajas";const API_NUEVOS="/api/nuevos";const API_GRUPOS="/api/grupos";const API_FESTIVOS="/api/festivos";const API_ASK="/api/ask";const API_SYNC_HUBSPOT="/api/sync-hubspot";  // Pages Functions (proxy del Sheet + bajas compartidas)
 const SNAPSHOT=`IMPRESORA,INTEGRACIÓN,ESTADO INTEGRACIÓN,TARIFA,COMPROMISO,COMERCIAL,BIENVENIDA,COD.CLIENTE,CLIENTE,POBLACIÓN,02/01,03/01,05/01,07/01,08/01,09/01,12/01,13/01,14/01,15/01,16/01,19/01,20/01,21/01,22/01,23/01,26/01,27/01,28/01,29/01,30/01,02/02,03/02,04/02,05/02,06/02,09/02,10/02,11/02,12/02,13/02,16/02,17/02,18/02,19/02,20/02,23/02,24/02,25/02,26/02,27/02,02/03,03/03,04/03,05/03,06/03,09/03,10/03,11/03,12/03,13/03,14/03,15/03,16/03,17/03,18/03,19/03,20/03,23/03,24/03,25/03,26/03,27/03,30/03,31/03,01/04,02/04,07/04,08/04,09/04,10/04,13/04,14/04,15/04,16/04,17/04,20/04,21/04,22/04,23/04,24/04,27/04,28/04,29/04,30/04,04/05,05/05,06/05,07/05,08/05,11/05,12/05,13/05,14/05,15/05,18/05,19/05,20/05,21/05,22/05,25/05,26/05,27/05,28/05,29/05,01/06,02/06,03/06,04/06,05/06,08/06,09/06,10/06,11/06,12/06,15/06
 CESIÓN,Desk,Finalizado,26ORTO,20,Noelia,9183809001,34223,ORTODENT LAB BARCELONA S.L.U,CERDANYOLA DEL VALLÈS,0,0,0,0,0,10,17,13,13,18,15,17,16,30,18,17,25,18,22,21,15,25,20,19,20,18,18,20,26,19,23,21,25,23,21,20,24,26,22,19,19,26,17,22,23,22,20,23,21,21,23,26,23,26,23,22,15,16,30,28,22,24,19,21,20,25,0,21,26,22,15,21,22,17,21,15,22,19,22,20,19,23,21,21,15,20,20,18,18,19,21,22,21,22,18,23,26,19,22,21,0,20,28,19,21,30,22,23,13,22,12,20,26,15,19,31
 CESIÓN,Área Cliente,Finalizado,N1126Q,20,Judith,8327233001,70132,FITONAT PRODUCTES NATURALS,ARGENTONA,4,0,3,0,54,37,30,54,32,22,0,36,30,20,28,17,43,17,34,25,19,30,17,37,30,14,10,19,8,17,16,17,18,18,21,18,19,25,17,21,19,24,26,33,13,15,16,16,18,23,14,14,19,14,19,23,30,14,13,21,20,12,15,18,15,13,6,11,15,30,15,13,23,16,21,16,19,15,19,9,15,25,13,21,24,17,22,15,19,18,14,21,24,15,11,20,16,23,23,19,0,22,28,24,16,20,12,26,22,17,20,17,23,25,25,11
@@ -960,6 +961,75 @@ function buildAIContext(){
   var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
   L.push("DETALLE DE TODOS LOS CLIENTES (formato nombre|comercial propietario|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
   return L.join("\n");
+}
+
+function hsEstado(c){
+  if(c.comp==null||c.cumpl==null)return"Sin compromiso";
+  if(c.cumpl>=130)return"Supera";
+  if(c.cumpl>=90)return"Cumple";
+  if(c.cumpl>=65)return"En riesgo";
+  return"No cumple";
+}
+function hsTendencia(sym){return sym==="↑"?"Sube":sym==="↓"?"Baja":"Estable";}
+function buildHubspotSyncPayload(){
+  if(!MODEL)return[];
+  const all=typeof collapsedClients==="function"?collapsedClients():MODEL.clients;
+  const out=[];
+  all.forEach(function(c){
+    const codigo=c.isGroup?(c.miembros&&c.miembros[0]):c.cod;
+    if(!codigo)return;
+    out.push({
+      codigo:String(codigo),
+      nombre:c.name,
+      properties:{
+        gls_compromiso_diario:c.comp==null?"":String(c.comp),
+        gls_envios_totales:String(c.total||0),
+        gls_media_envios_dia:String(c.mediaDia!=null?c.mediaDia.toFixed(2):"0"),
+        gls_cumplimiento_pct:c.cumpl==null?"":String(c.cumpl),
+        gls_estado_cumplimiento:hsEstado(c),
+        gls_tendencia:hsTendencia(c.tSym),
+        gls_dias_sin_envio:String(c.gapEnd!=null?c.gapEnd:0),
+        gls_variacion_semanal_wow:c.wow==null?"":String(Math.round(c.wow*100)),
+        gls_es_grupo:c.isGroup?"true":"false",
+        gls_num_empresas_grupo:c.isGroup?String(c.members.length):"0"
+      }
+    });
+  });
+  return out;
+}
+async function hsSyncNow(){
+  const btn=document.getElementById("hs-sync");
+  if(!btn||btn.disabled)return;
+  btn.disabled=true;
+  const origLabel=btn.innerHTML;
+  btn.innerHTML="Sincronizando…";
+  try{
+    const payload=buildHubspotSyncPayload();
+    const r=await fetch(API_SYNC_HUBSPOT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({clients:payload})});
+    const j=await r.json();
+    hsShowResult(payload.length,j);
+  }catch(e){
+    hsShowResult(0,{error:"Error de conexion: "+e.message});
+  }
+  btn.disabled=false;
+  btn.innerHTML=origLabel;
+}
+function hsShowResult(total,j){
+  const ov=document.createElement("div");
+  ov.className="gmodal-ov";
+  ov.id="hs-ov";
+  let body;
+  if(j.error){
+    body='<div style="color:var(--red)">'+esc(j.error)+'</div>';
+  }else{
+    const nf=(j.notFound||[]).slice(0,15).map(function(x){return"<li>"+esc(x.nombre)+" (codigo "+esc(x.codigo)+")</li>";}).join("");
+    const errs=(j.errors||[]).map(function(x){return"<li>"+esc(x)+"</li>";}).join("");
+    body='<div style="margin-bottom:10px"><b style="color:var(--green)">'+j.updated+'</b> actualizados de '+total+' clientes procesados.</div>'
+      +((j.notFound&&j.notFound.length)?'<div style="margin-bottom:10px"><b style="color:var(--amber)">'+j.notFound.length+' no encontrados</b> en HubSpot (por codigo_de_cliente):<ul style="margin:6px 0 0;padding-left:18px;font-size:12px;max-height:140px;overflow:auto">'+nf+'</ul></div>':"")
+      +((j.errors&&j.errors.length)?'<div><b style="color:var(--red)">Errores:</b><ul style="margin:6px 0 0;padding-left:18px;font-size:12px">'+errs+'</ul></div>':"");
+  }
+  ov.innerHTML='<div class="gmodal"><div style="font-size:16px;font-weight:600;margin-bottom:12px">Resultado sincronizacion HubSpot</div>'+body+'<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="bajabtn" onclick="document.getElementById(\'hs-ov\').remove()">Cerrar</button></div></div>';
+  document.body.appendChild(ov);
 }
 
 const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
