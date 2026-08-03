@@ -63,10 +63,38 @@ async function readGrupos(env) {
   } catch { return []; }
 }
 
+function pedirCredenciales() {
+  return new Response("Acceso restringido. Panel interno de Impackta.", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Panel Impackta", charset="UTF-8"',
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+}
+
+function credencialesOk(request, env) {
+  if (!env.DASH_USER || !env.DASH_PASS) return true;
+  const cabecera = request.headers.get("Authorization") || "";
+  if (!cabecera.startsWith("Basic ")) return false;
+  let plano = "";
+  try { plano = atob(cabecera.slice(6)); } catch (e) { return false; }
+  const corte = plano.indexOf(":");
+  if (corte < 0) return false;
+  const usuario = plano.slice(0, corte);
+  const clave = plano.slice(corte + 1);
+  const uOk = usuario.length === String(env.DASH_USER).length && usuario === env.DASH_USER;
+  const pOk = clave.length === String(env.DASH_PASS).length && clave === env.DASH_PASS;
+  return uOk && pOk;
+}
+
 export default {
   async fetch(request, env) {
     const url  = new URL(request.url);
     const path = url.pathname;
+
+    if (!credencialesOk(request, env)) return pedirCredenciales();
 
     // ── /api/sheet ─────────────────────────────────────────────────────────
     if (path === "/api/sheet") {
