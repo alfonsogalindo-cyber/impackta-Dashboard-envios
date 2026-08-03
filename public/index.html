@@ -1006,10 +1006,22 @@ function buildHubspotSyncPayload(){
         gls_num_empresas_grupo:c.isGroup?String(c.members.length):"0",
         gls_envios_ultimo_dia:String(ud.envios),
         gls_variacion_vs_media_5d:ud.varPct==null?"":String(ud.varPct),
-        gls_fecha_ultimo_dia:ud.fecha
+        gls_fecha_ultimo_dia:ud.fecha,
+        gls_grupo_empresas:""
       }
     });
   });
+  if(typeof GRUPOS!=="undefined"&&GRUPOS&&GRUPOS.length){
+    GRUPOS.forEach(function(g){
+      (g.miembros||[]).forEach(function(cod){
+        const key=String(cod);
+        let ya=null;
+        for(let i=0;i<out.length;i++){if(out[i].codigo===key){ya=out[i];break;}}
+        if(ya){ya.properties.gls_grupo_empresas=g.nombre;}
+        else{out.push({codigo:key,nombre:g.nombre+" (miembro)",properties:{gls_grupo_empresas:g.nombre}});}
+      });
+    });
+  }
   return out;
 }
 async function hsSyncNow(){
