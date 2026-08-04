@@ -301,6 +301,14 @@ export default {
         const clients = Array.isArray(body.clients) ? body.clients : [];
         if (!clients.length) return jsonRes({ error: "sin clientes en la peticion" }, 400);
 
+        // El aislamiento entre cajas se decide AQUI, no en el navegador: con
+        // universo="cuentas" solo se aceptan fichas etiquetadas "Cliente antiguo".
+        // 57 codigos estan en las dos hojas, asi que sin este filtro la Caja 2
+        // podria pisar los datos de compromiso de la Caja 1 por un despiste del
+        // frontend. Sin el parametro, comportamiento de siempre (Caja 1).
+        const universo = String(body.universo || "").trim();
+        const soloCuentas = (universo === "cuentas");
+
         const hsHeaders = { Authorization: "Bearer " + env.HUBSPOT_TOKEN, "Content-Type": "application/json" };
         const now = new Date();
         const todayMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
@@ -319,8 +327,12 @@ export default {
             // alguno esta duplicado, y sin paginar esas se perdian sin avisar.
             let after = null;
             for (let pagina = 0; pagina < 20; pagina++) {
+              const filtros = [{ propertyName: "codigo_de_cliente", operator: "IN", values: codes }];
+              if (soloCuentas) {
+                filtros.push({ propertyName: "gls_ano_seguimiento", operator: "EQ", value: "Cliente antiguo" });
+              }
               const consulta = {
-                filterGroups: [{ filters: [{ propertyName: "codigo_de_cliente", operator: "IN", values: codes }] }],
+                filterGroups: [{ filters: filtros }],   // varios filtros en un grupo = AND
                 properties: ["codigo_de_cliente", "name"],
                 limit: 100,
               };
