@@ -1170,7 +1170,15 @@ function irSeccion(s){
    El boton de sincronizar tambien es solo de la Caja 1. */
 function setSeccionUI(){
   const c2=state.seccion==="cuentas";
-  const hb=$("#hs-sync");if(hb)hb.style.display=c2?"none":"";
+  // El boton de sincronizar actua sobre la caja que estas mirando. Antes se
+  // ocultaba en la Caja 2; ahora sincroniza esa caja, con su propio aviso.
+  const hb=$("#hs-sync");
+  if(hb){
+    hb.style.display="";
+    hb.setAttribute("onclick",c2?"cuentasSyncNow()":"hsSyncNow()");
+    hb.title=c2?"Actualizar en HubSpot las cuentas de esta caja (Cliente antiguo)"
+               :"Actualizar en HubSpot los clientes nuevos";
+  }
   const h1=document.querySelector("header .brand h1");
   const sb=document.querySelector("header .brand span");
   if(h1)h1.textContent=c2?"Cuentas Impackta":"Control de Clientes Nuevos";
@@ -1513,6 +1521,84 @@ function cuentasPlaceholder(){
     <div class="panel"><div class="empty"><b>No he podido cargar la hoja.</b><br>
     <span style="font-size:12px">${esc(CUENTAS_ERR||"motivo desconocido")}</span><br><br>
     <button class="primbtn" onclick="loadCuentas(true)">Reintentar</button></div></div></div>`;
+}
+
+/* ---------- sincronizacion con HubSpot (Caja 2) ---------- */
+/* Solo se manda lo que cambia a diario: volumen y evolucion.
+   NO se mandan gls_es_grupo / gls_num_empresas_grupo / gls_grupo_empresas: esos
+   ya estan bien en HubSpot desde el volcado historico, no cambian de un dia a
+   otro, y reenviarlos desde aqui solo abre la puerta a sobrescribirlos mal.
+   Tampoco compromiso ni cumplimiento: en esta caja no existen. */
+/* toISOString() convierte a UTC: con una fecha a medianoche local y España en
+   +2, el 03/08 se escribia como 2026-08-02. Se arma con los componentes locales. */
+function isoLocal(d){
+  if(!d)return "";
+  const m=d.getMonth()+1, x=d.getDate();
+  return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(x<10?"0":"")+x;
+}
+
+function buildCuentasSyncPayload(){
+  if(!CUENTAS)return[];
+  const out=[];
+  const ultimo=CUENTAS.corte;
+  const iu=CUENTAS.fechas.length-1;
+  CUENTAS.clients.forEach(function(c){
+    if(!c.cod)return;
+    if(!c.total)return;                     // sin un solo envio no hay nada que contar
+    /* Variacion del ultimo dia contra los 5 dias ANTERIORES CON ACTIVIDAD, no
+       contra los 5 naturales. Esta hoja tiene los 7 dias de la semana, asi que
+       incluir sabado y domingo (118 y 2 envios) disparaba a DOGFY a +229% cada
+       lunes. La Caja 1 no sufre esto porque su hoja solo tiene dias operativos:
+       ajustar el calculo es lo que hace que el KPI signifique lo mismo en las
+       dos cajas, no una incoherencia entre ellas. */
+    let m5=0,n5=0;
+    for(let k=iu-1;k>=0&&n5<5;k--){ if(c.serie[k]>0){m5+=c.serie[k];n5++} }
+    const media5=n5?m5/n5:0;
+    const envUlt=c.serie[iu]||0;
+    const var5=media5>0?Math.round((envUlt-media5)/media5*100):null;
+    out.push({
+      codigo:String(c.cod),
+      nombre:c.name,
+      properties:{
+        gls_envios_totales:String(c.total),
+        gls_envios_ultimo_dia:String(envUlt),
+        gls_media_envios_dia:String(c.media.toFixed(2)),
+        gls_tendencia:c.tend,
+        gls_dias_sin_envio:String(c.gap==null?0:c.gap),
+        gls_variacion_semanal_wow:c.wow==null?"":String(c.wow),
+        gls_variacion_vs_media_5d:var5==null?"":String(var5),
+        gls_fecha_ultimo_dia:isoLocal(ultimo)
+      }
+    });
+  });
+  return out;
+}
+
+async function cuentasSyncNow(){
+  const btn=document.getElementById("hs-sync");
+  if(!btn||btn.disabled)return;
+  if(!CUENTAS){alert("Todavia no se han cargado los datos de Cuentas Impackta.");return}
+  const payload=buildCuentasSyncPayload();
+  if(!payload.length){alert("No hay cuentas con envios que sincronizar.");return}
+  if(!confirm("Vas a actualizar "+payload.length+" cuentas en HubSpot con los datos hasta el "+
+              fmtFecha(CUENTAS.corte)+".\n\nSolo se tocan las fichas marcadas como "+
+              "\"Cliente antiguo\": las de Clientes nuevos no se ven afectadas.\n\n¿Sigo?"))return;
+  btn.disabled=true;
+  const etiqueta=btn.innerHTML;
+  btn.innerHTML="Sincronizando…";
+  try{
+    const r=await fetch(API_SYNC_HUBSPOT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({clients:payload,universo:"cuentas"})});
+    const j=await r.json();
+    if(typeof hsShowRes==="function")hsShowRes(j,payload.length);
+    else alert("Actualizadas: "+(j.updated||0)+" de "+payload.length+
+               (j.notFound&&j.notFound.length?("\nSin ficha en HubSpot: "+j.notFound.length):"")+
+               (j.errors&&j.errors.length?("\nErrores: "+j.errors.join(" · ")):""));
+  }catch(e){
+    alert("No he podido sincronizar: "+(e&&e.message?e.message:e));
+  }finally{
+    btn.disabled=false;btn.innerHTML=etiqueta;
+  }
 }
 
 /* ---------- grafico de barras por semana ---------- */
