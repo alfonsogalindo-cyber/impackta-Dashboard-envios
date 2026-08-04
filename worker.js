@@ -8,6 +8,21 @@
 const SHEET_ID   = "10DG3sr989bQS7l59rgV7QbuFWZldbDIdFMpOOUvGLiU";
 const SHEET_NAME = "2026";
 const SHEET_GID  = "103618376";
+
+// Cuando varias fichas de HubSpot comparten el mismo codigo_de_cliente hay que decir
+// cual recibe los datos. Sin esto ganaba la ultima que devolvia la busqueda, asi que
+// el destino cambiaba de una sincronizacion a otra. Las fichas que no estan aqui
+// no se actualizan nunca.
+//   50265 -> DecremProfessional (NEON PROFESSIONAL/DECREM 269340970173 queda fuera)
+//   50264 -> QUALITY TECHNICAL IBERICA (las 5 delegaciones QTI quedan fuera)
+//   34314 -> TRESCAL ESPANA DE METROLOGIA (las 3 fichas TEM quedan fuera)
+//   50200 -> MORIA SURGICAL SPAIN (OftalTech Solutions Madrid 277213784251 queda fuera)
+const FICHA_PREFERENTE = {
+  "50265": "277035814096",
+  "50264": "245497807096",
+  "34314": "412916163771",
+  "50200": "361444578526",
+};
 const FESTIVOS_2026 = [
   {fecha:"2026-01-01",nombre:"Any Nou",ambito:"ES"},
   {fecha:"2026-01-06",nombre:"Reis",ambito:"ES"},
@@ -27,6 +42,15 @@ const FESTIVOS_2026 = [
 const KV_KEY     = "lista";
 const KV_KEY_NUEVOS = "nuevos";
 const KV_KEY_GRUPOS = "grupos";
+
+// ── Caja 2: hoja "Cuentas Impackta" ────────────────────────────────────────
+// Universo distinto (los clientes que no estan en la hoja de clientes nuevos).
+// Su lista de bajas va en una clave SEPARADA a proposito: si compartiera clave
+// con la Caja 1, dar de baja a uno de los clientes que estan en las dos hojas
+// lo borraria de los activos de la Caja 1.
+const CUENTAS_SHEET_ID = "12BtAIUjcW3bw_BcM3ZJ9Pv27HatgqipydpYqgqjYk-M";
+const CUENTAS_GID      = "1275222205";
+const KV_KEY_BAJAS_CUENTAS = "bajas_cuentas";
 
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -51,6 +75,14 @@ async function readNuevos(env) {
   if (!env.BAJAS_KV) return [];
   try {
     const raw = await env.BAJAS_KV.get(KV_KEY_NUEVOS);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+async function readBajasCuentas(env) {
+  if (!env.BAJAS_KV) return [];
+  try {
+    const raw = await env.BAJAS_KV.get(KV_KEY_BAJAS_CUENTAS);
     return raw ? JSON.parse(raw) : [];
   } catch { return []; }
 }
@@ -109,6 +141,51 @@ export default {
       } catch (e) {
         return new Response("fetch error: " + e.message, { status: 502 });
       }
+    }
+
+    // ── /api/cuentas ────────────────────────────────────────────────────────
+    // Proxy de la hoja "Data envios" de Cuentas Impackta (Caja 2).
+    // Ruta aparte de /api/sheet para no tocar nada de lo que ya funciona.
+    if (path === "/api/cuentas") {
+      const src = `https://docs.google.com/spreadsheets/d/${CUENTAS_SHEET_ID}/export?format=csv&gid=${CUENTAS_GID}`;
+      try {
+        const res = await fetch(src, { headers: { "User-Agent": "Mozilla/5.0" } });
+        if (!res.ok) return new Response("No se pudo leer la hoja de Cuentas Impackta", { status: 502 });
+        const csv = await res.text();
+        return new Response(csv, {
+          headers: {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Cache-Control": "no-store",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch (e) {
+        return new Response("Error leyendo la hoja de Cuentas Impackta", { status: 502 });
+      }
+    }
+
+    // ── /api/bajas-cuentas GET ──────────────────────────────────────────────
+    if (path === "/api/bajas-cuentas" && request.method === "GET") {
+      if (!env.BAJAS_KV) return jsonRes({ bajas: [], error: "KV no configurado" });
+      return jsonRes({ bajas: await readBajasCuentas(env) });
+    }
+
+    // ── /api/bajas-cuentas POST ─────────────────────────────────────────────
+    if (path === "/api/bajas-cuentas" && request.method === "POST") {
+      if (!env.BAJAS_KV) return jsonRes({ bajas: [], error: "KV no configurado" });
+      let body;
+      try { body = await request.json(); } catch { return jsonRes({ error: "json inválido" }, 400); }
+      let list = await readBajasCuentas(env);
+      if (body.op === "set" && Array.isArray(body.bajas)) {
+        list = [...new Set(body.bajas.map(String))];
+      } else if (body.op === "toggle" && body.key != null) {
+        const k = String(body.key);
+        list = list.includes(k) ? list.filter(x => x !== k) : [...list, k];
+      } else {
+        return jsonRes({ error: "operación no reconocida" }, 400);
+      }
+      await env.BAJAS_KV.put(KV_KEY_BAJAS_CUENTAS, JSON.stringify(list));
+      return jsonRes({ bajas: list });
     }
 
     // ── /api/bajas GET ──────────────────────────────────────────────────────
@@ -238,20 +315,33 @@ export default {
           const codes = Array.from(new Set(chunk.map((c) => String(c.codigo))));
           let idByCode = {};
           try {
-            const searchRes = await fetch("https://api.hubapi.com/crm/v3/objects/companies/search", {
-              method: "POST",
-              headers: hsHeaders,
-              body: JSON.stringify({
+            // Paginamos: un lote de 90 codigos puede devolver mas de 100 fichas si
+            // alguno esta duplicado, y sin paginar esas se perdian sin avisar.
+            let after = null;
+            for (let pagina = 0; pagina < 20; pagina++) {
+              const consulta = {
                 filterGroups: [{ filters: [{ propertyName: "codigo_de_cliente", operator: "IN", values: codes }] }],
                 properties: ["codigo_de_cliente", "name"],
                 limit: 100,
-              }),
-            });
-            const searchJson = await searchRes.json();
-            if (!searchRes.ok) throw new Error(searchJson.message || "HubSpot search error " + searchRes.status);
-            (searchJson.results || []).forEach((r) => {
-              if (r.properties && r.properties.codigo_de_cliente) idByCode[String(r.properties.codigo_de_cliente)] = r.id;
-            });
+              };
+              if (after) consulta.after = after;
+              const searchRes = await fetch("https://api.hubapi.com/crm/v3/objects/companies/search", {
+                method: "POST",
+                headers: hsHeaders,
+                body: JSON.stringify(consulta),
+              });
+              const searchJson = await searchRes.json();
+              if (!searchRes.ok) throw new Error(searchJson.message || "HubSpot search error " + searchRes.status);
+              (searchJson.results || []).forEach((r) => {
+                const cod = (r.properties && r.properties.codigo_de_cliente) ? String(r.properties.codigo_de_cliente) : "";
+                if (!cod) return;
+                const preferida = FICHA_PREFERENTE[cod];
+                if (preferida) { if (String(r.id) === preferida) idByCode[cod] = r.id; return; }
+                idByCode[cod] = r.id;
+              });
+              after = (searchJson.paging && searchJson.paging.next) ? searchJson.paging.next.after : null;
+              if (!after) break;
+            }
           } catch (e) {
             errors.push("busqueda: " + (e && e.message ? e.message : String(e)));
             continue;
