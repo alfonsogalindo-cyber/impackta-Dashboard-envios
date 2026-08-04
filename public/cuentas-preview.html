@@ -1563,7 +1563,15 @@ $("#panels").addEventListener("click",e=>{
 $("#tabbar").addEventListener("click",e=>{const t=e.target.closest(".tab");if(!t)return;state.tab=t.dataset.tab;renderTabs();renderActive();$$(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===state.tab))});
 $("#comercialPills").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;state.comercial=b.dataset.c;renderPills();renderActive();renderTabs()});
 $("#search").addEventListener("input",e=>{state.q=e.target.value;state.tablePage={};renderActive();renderTabs()});
-$("#refresh").addEventListener("click",loadLive);
+$("#refresh").addEventListener("click",function(){
+  if(state.seccion==="cuentas"){
+    const b=$("#refresh"), ic=b.querySelector("svg");
+    b.disabled=true; if(ic)ic.classList.add("spin");
+    loadCuentas(true).then(function(){b.disabled=false; if(ic)ic.classList.remove("spin");});
+    return;
+  }
+  loadLive();
+});
 $("#banx").addEventListener("click",()=>$("#banner").classList.remove("show"));
 $("#theme").addEventListener("click",()=>{const cur=document.documentElement.getAttribute("data-theme");applyTheme(cur==="dark"?"light":"dark")});
 
