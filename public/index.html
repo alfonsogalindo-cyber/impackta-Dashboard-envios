@@ -259,6 +259,65 @@ tr.isgroup{background:var(--bg-2)}
   #ai-open svg{width:16px;height:16px;margin-right:6px}
   @media(max-width:760px){#ai-drawer{width:100vw;max-width:100vw}body.ai-open>header,body.ai-open>.wrap{margin-right:0}}
 
+
+  /* ===== NAVEGACION POR SECCIONES (Caja 1 / Caja 2) ===== */
+  /* El sidebar resta ~215px al area util y las 8 pestanas de Clientes nuevos
+     dejaban de caber ("Diagnostico" se cortaba). Ampliamos el contenedor lo
+     justo para recuperar ese ancho, aprovechando el hueco que sobraba a los
+     lados. Afecta tambien a la cabecera para que todo siga alineado. */
+  .wrap{max-width:1520px}
+  .layout{display:flex;gap:20px;align-items:flex-start;padding-top:18px}
+  .sidenav{flex:0 0 196px;position:sticky;top:14px;display:flex;flex-direction:column;gap:4px}
+  .sidenav .sec-lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--faint);padding:0 12px 9px}
+  .snav{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:11px 12px;
+    border-radius:11px;border:1px solid transparent;background:transparent;color:var(--ink-2);
+    font-size:13.5px;font-weight:560;line-height:1.3;cursor:pointer;font-family:inherit;
+    transition:background .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease)}
+  .snav:hover{background:var(--card-2);color:var(--ink)}
+  .snav[aria-current="page"]{background:var(--card);border-color:var(--line);color:var(--ink);box-shadow:var(--sh)}
+  .snav svg{width:16px;height:16px;flex:0 0 16px;margin-top:1px;stroke-width:2}
+  .snav .sn-t{display:block}
+  .snav .sn-sub{display:block;font-size:11px;font-weight:450;color:var(--muted);margin-top:3px}
+  /* min-width:0 es imprescindible: sin el, una tabla ancha desborda el flex item */
+  .content{flex:1 1 auto;min-width:0}
+  .content>.tabbar{position:sticky;top:0;z-index:20;margin-bottom:0;border-radius:0}
+  /* Las 8 pestanas de Clientes nuevos necesitan 1023px con el padding original y
+     a 1280px de ventana solo quedaban 1016: se cortaba por 7px. Con 12px de
+     padding bajan a ~975 y entran con holgura. */
+  .content>.tabbar .tab{padding-left:12px;padding-right:12px}
+  /* Por debajo de 1200px el sidebar lateral se come el ancho que necesitan las
+     pestanas, asi que pasa arriba en horizontal y les deja el ancho completo. */
+  @media (max-width:1200px){
+    .layout{display:block;padding-top:12px}
+    .sidenav{position:static;flex-direction:row;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
+    .sidenav::-webkit-scrollbar{display:none}
+    .sidenav .sec-lab{display:none}
+    .snav{width:auto;white-space:nowrap;padding:9px 13px;background:var(--card-2);
+      border-color:var(--line-2);border-radius:999px;align-items:center}
+    .snav .sn-sub{display:none}
+    .snav svg{margin-top:0}
+  }
+  .cfilter button[data-cufilter]{cursor:pointer}
+  /* La columna de accion queda fija a la derecha: con 9 columnas habia que
+     arrastrar la tabla para llegar al boton de dar de baja. */
+  .stickyacc table th:last-child,
+  .stickyacc table td:last-child{position:sticky;right:0;background:var(--card);
+    box-shadow:-11px 0 13px -11px rgba(16,22,34,.20)}
+  .stickyacc table tbody tr:hover td:last-child{background:var(--card-2)}
+  [data-theme="dark"] .stickyacc table th:last-child,
+  [data-theme="dark"] .stickyacc table td:last-child{box-shadow:-11px 0 13px -11px rgba(0,0,0,.55)}
+  .pagenav{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 13px;
+    border-top:1px solid var(--line-2)}
+  .pagenav .pginfo{font-size:12px;color:var(--muted);margin-right:auto}
+  /* En pantalla estrecha la cabecera iba en nowrap: el titulo desbordaba y los
+     botones se le montaban encima. Que bajen a su propia linea. */
+  @media (max-width:760px){
+    .hd{flex-wrap:wrap;row-gap:10px;align-items:flex-start}
+    .brand{flex:1 1 100%;min-width:0}
+    .brand h1{overflow:hidden;text-overflow:ellipsis}
+    .hd-right{flex:1 1 100%;justify-content:flex-start;flex-wrap:wrap;row-gap:8px}
+  }
 </style>
 </head>
 <body>
@@ -282,11 +341,13 @@ tr.isgroup{background:var(--bg-2)}
         </button>
       </div>
     </div>
-    <div class="tabbar" id="tabbar" role="tablist"></div>
   </div>
 </header>
 
-<div class="wrap">
+<div class="wrap layout">
+  <nav class="sidenav" id="sidenav" aria-label="Secciones del panel"></nav>
+  <main class="content">
+  <div class="tabbar" id="tabbar" role="tablist"></div>
   <div class="filterbar" id="filterbar">
     <div class="pills" id="comercialPills" role="group" aria-label="Filtrar por comercial"></div>
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
@@ -297,6 +358,7 @@ tr.isgroup{background:var(--bg-2)}
   <div id="panels"></div>
 
   <div class="foot"><span>Impackta — Agencia oficial GLS · Panel operativo interno</span><span id="footinfo"></span></div>
+  </main>
 </div>
 <div class="tip" id="tip"></div>
 
@@ -408,7 +470,7 @@ function aggregate(cls,dates){
 
 /* ===== STATE ===== */
 let SRC="snapshot",UPDATED=null;
-const state={tab:"resumen",comercial:"Todos",q:"",sortRank:"cumpl_asc",tableSort:{},trendClient:null,clientesFilter:"all"};
+const state={seccion:"caja1",tabPrev:{},tab:"resumen",comercial:"Todos",q:"",sortRank:"cumpl_asc",tableSort:{},tablePage:{},trendClient:null,clientesFilter:"all",cuentasFilter:"all"};
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>Math.round(n).toLocaleString("es-ES");
 const fmt1=n=>n.toLocaleString("es-ES",{maximumFractionDigits:1});
@@ -499,7 +561,7 @@ function fc(){return fcAll().filter(c=>!isBaja(c)&&!isNuevo(c))}
 
 /* ===== SORTABLE TABLE ===== */
 // cols: [{k,label,align:'r'|'',val:(r)=>sortValue,cell:(r)=>html,defDir:1|-1,sortable:false?}]
-function makeTable(tid,cols,rows,{foot=null,def=null,rowClass=null}={}){
+function makeTable(tid,cols,rows,{foot=null,def=null,rowClass=null,perPage=0}={}){
   if(!state.tableSort[tid])state.tableSort[tid]=def?{...def}:{k:cols[0].k,dir:cols[0].defDir??-1};
   const st=state.tableSort[tid], col=cols.find(c=>c.k===st.k)||cols[0];
   const sorted=rows.slice().sort((a,b)=>{
@@ -513,8 +575,19 @@ function makeTable(tid,cols,rows,{foot=null,def=null,rowClass=null}={}){
     const cls=(c.align==="r"?"r":"")+(sortable?"":" nc");
     const attrs=sortable?`data-tid="${tid}" data-k="${c.k}" data-dd="${c.defDir??-1}"`:"";
     return `<th class="${cls}" ${attrs}>${c.label}${active?`<span class="ar">${st.dir>0?"▲":"▼"}</span>`:""}</th>`}).join("");
-  const tbody=sorted.map(r=>`<tr class="${rowClass?rowClass(r):""}">${cols.map(c=>`<td class="${c.align==="r"?"r":""}">${c.cell(r)}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${cols.length}" class="empty">Sin datos</td></tr>`;
-  return `<div class="tbl-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody>${foot?`<tfoot><tr>${foot}</tr></tfoot>`:""}</table></div>`;
+  let visibles=sorted, nav="";
+  if(perPage>0&&sorted.length>perPage){
+    const pags=Math.ceil(sorted.length/perPage);
+    let pg=state.tablePage[tid]||0; if(pg>=pags)pg=pags-1; if(pg<0)pg=0; state.tablePage[tid]=pg;
+    visibles=sorted.slice(pg*perPage,pg*perPage+perPage);
+    const desde=pg*perPage+1, hasta=Math.min(sorted.length,(pg+1)*perPage);
+    nav=`<div class="pagenav"><span class="pginfo">${desde}–${hasta} de ${sorted.length}</span>`+
+        `<button class="bajabtn" data-tpage="-1" data-ptid="${tid}"${pg<=0?" disabled":""}>‹</button>`+
+        `<span style="font-size:12px;color:var(--muted)">Página ${pg+1} de ${pags}</span>`+
+        `<button class="bajabtn" data-tpage="1" data-ptid="${tid}"${pg>=pags-1?" disabled":""}>›</button></div>`;
+  }
+  const tbody=visibles.map(r=>`<tr class="${rowClass?rowClass(r):""}">${cols.map(c=>`<td class="${c.align==="r"?"r":""}">${c.cell(r)}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${cols.length}" class="empty">Sin datos</td></tr>`;
+  return `<div class="tbl-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody>${foot?`<tfoot><tr>${foot}</tr></tfoot>`:""}</table></div>`+nav;
 }
 
 /* ===== CHART HELPERS (SVG) ===== */
@@ -558,6 +631,14 @@ function bindTips(scope){scope.querySelectorAll("[data-tip]").forEach(n=>{
   n.addEventListener("mouseleave",()=>tip.style.opacity="0")})}
 
 /* ===== TABS DEF ===== */
+const SECCIONES=[
+  {id:"caja1",label:"Clientes nuevos",sub:"Compromiso y seguimiento",
+   ic:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
+  {id:"cuentas",label:"Cuentas Impackta",sub:"Volumen real de envíos",
+   ic:'<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/>'},
+];
+const TABS_CAJA2=[{id:"cu_resumen",label:"Resumen"},{id:"cu_cuentas",label:"Cuentas y bajas"}];
+const tabsDe=s=>s==="cuentas"?TABS_CAJA2:TABS;
 const TABS=[
   {id:"resumen",label:"Resumen"},
   {id:"volumen",label:"Volumen y actividad"},
@@ -1059,24 +1140,73 @@ function hsShowResult(total,j){
   document.body.appendChild(ov);
 }
 
-const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico};
+const RENDERERS={resumen:renderResumen,volumen:renderVolumen,cumplimiento:renderCumplimiento,tendencia:renderTendencia,segmentacion:renderSegmentacion,altas:renderAltas,clientes:renderClientes,diagnostico:renderDiagnostico,cu_resumen:renderCuentasResumen,cu_cuentas:renderCuentasTabla};
 
 function renderTabs(){
-  $("#tabbar").innerHTML=TABS.map(t=>{let badge="";
-    if(MODEL&&t.id==="cumplimiento")badge=`<span class="n">${fc().filter(x=>x.comp!=null&&x.cumpl<65).length}</span>`;
-    if(MODEL&&t.id==="clientes"){const nb=fcAll().filter(isBaja).length;if(nb)badge=`<span class="n">${nb}</span>`}
+  const c2=state.seccion==="cuentas";
+  $("#tabbar").innerHTML=tabsDe(state.seccion).map(t=>{let badge="";
+    if(!c2&&MODEL&&t.id==="cumplimiento")badge=`<span class="n">${fc().filter(x=>x.comp!=null&&x.cumpl<65).length}</span>`;
+    if(!c2&&MODEL&&t.id==="clientes"){const nb=fcAll().filter(isBaja).length;if(nb)badge=`<span class="n">${nb}</span>`}
     return `<button class="tab" role="tab" data-tab="${t.id}" aria-selected="${state.tab===t.id}">${t.label}${badge}</button>`}).join("");
 }
+function renderSidenav(){
+  $("#sidenav").innerHTML=`<div class="sec-lab">Paneles</div>`+SECCIONES.map(s=>
+    `<button class="snav" data-sec="${s.id}" ${state.seccion===s.id?'aria-current="page"':""}>`+
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${s.ic}</svg>`+
+    `<span><span class="sn-t">${s.label}</span><span class="sn-sub">${s.sub}</span></span></button>`).join("");
+}
+function irSeccion(s){
+  if(s===state.seccion)return;
+  state.tabPrev[state.seccion]=state.tab;
+  state.seccion=s;
+  state.tab=state.tabPrev[s]||tabsDe(s)[0].id;
+  try{localStorage.setItem("impackta-seccion",s)}catch(e){}
+  if(s==="cuentas")loadCuentas();
+  renderAll();
+  window.scrollTo({top:0,behavior:"instant"});
+}
+/* La cabecera pertenece a la seccion activa: si dice "Clientes Nuevos" mientras
+   miras Cuentas Impackta, no se sabe sobre que cartera se esta actuando.
+   El boton de sincronizar tambien es solo de la Caja 1. */
+function setSeccionUI(){
+  const c2=state.seccion==="cuentas";
+  // El boton de sincronizar actua sobre la caja que estas mirando. Antes se
+  // ocultaba en la Caja 2; ahora sincroniza esa caja, con su propio aviso.
+  const hb=$("#hs-sync");
+  if(hb){
+    hb.style.display="";
+    hb.setAttribute("onclick",c2?"cuentasSyncNow()":"hsSyncNow()");
+    hb.title=c2?"Actualizar en HubSpot las cuentas de esta caja (Cliente antiguo)"
+               :"Actualizar en HubSpot los clientes nuevos";
+  }
+  const h1=document.querySelector("header .brand h1");
+  const sb=document.querySelector("header .brand span");
+  if(h1)h1.textContent=c2?"Cuentas Impackta":"Control de Clientes Nuevos";
+  if(sb)sb.textContent=c2?"Impackta · volumen real de envíos":"Impackta · cumplimiento de compromiso · 2026";
+  document.title=c2?"Impackta · Cuentas Impackta":"Impackta · Control de Clientes Nuevos 2026";
+}
 function renderActive(){
-  $("#panels").innerHTML=`<div class="tabpanel active">${RENDERERS[state.tab]()}</div>`;
+  const rf=RENDERERS[state.tab]||RENDERERS[tabsDe(state.seccion)[0].id];
+  $("#panels").innerHTML=`<div class="tabpanel active">${rf()}</div>`;
   bindTips($("#panels"));
   const sr=$("#sortRank");if(sr){sr.value=state.sortRank;sr.addEventListener("change",e=>{state.sortRank=e.target.value;renderActive()})}
   const ts=$("#trendsel");if(ts)ts.addEventListener("change",e=>{state.trendClient=e.target.value;renderActive()});
-  $("#footinfo").textContent=`${MODEL.clients.length} clientes · ${MODEL.N} días · ${SRC==="live"?"datos en vivo":"snapshot embebido"}`;
+  if(state.seccion==="cuentas"){
+    $("#footinfo").textContent=CUENTAS?`${CUENTAS.clients.length} cuentas · ${CUENTAS.fechas.length} días · hoja Cuentas Impackta`:"Cuentas Impackta";
+  }else{
+    $("#footinfo").textContent=`${MODEL.clients.length} clientes · ${MODEL.N} días · ${SRC==="live"?"datos en vivo":"snapshot embebido"}`;
+  }
 }
-function renderPills(){const coms=["Todos",...[...new Set(MODEL.clients.map(x=>x.comercial))].filter(c=>c&&c!=="—").sort()];
-  $("#comercialPills").innerHTML=coms.map(c=>`<button class="pill" aria-pressed="${state.comercial===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}
-function renderAll(){renderTabs();renderPills();renderActive()}
+function renderPills(){
+  const p=$("#comercialPills"), s=$("#search");
+  if(state.seccion==="cuentas"){
+    // en la Caja 2 no hay comercial asignado, solo buscador
+    p.innerHTML="";p.style.display="none";if(s)s.placeholder="Buscar cuenta o código…";return;
+  }
+  p.style.display="";if(s)s.placeholder="Buscar cliente…";
+  const coms=["Todos",...[...new Set(MODEL.clients.map(x=>x.comercial))].filter(c=>c&&c!=="—").sort()];
+  p.innerHTML=coms.map(c=>`<button class="pill" aria-pressed="${state.comercial===c}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}
+function renderAll(){setSeccionUI();renderSidenav();renderTabs();renderPills();renderActive()}
 
 /* ===== META / THEME ===== */
 function setMeta(){$("#srcdot").className="dot"+(SRC==="live"?"":" snap");$("#srctxt").textContent=SRC==="live"?"Datos en vivo":"Snapshot";
@@ -1103,8 +1233,401 @@ async function loadLive(){const btn=$("#refresh");btn.disabled=true;btn.querySel
 }
 function boot(){MODEL=transform(parseCSV(SNAPSHOT.trim()));SRC="snapshot";renderAll();setMeta()}
 
+/* ===================================================================== */
+/* ===== CAJA 2 · CUENTAS IMPACKTA ===================================== */
+/* Universo aparte: los clientes que NO estan en la hoja de clientes      */
+/* nuevos. No comparte ni datos ni lista de bajas con la Caja 1.          */
+/* Sin compromiso, sin cumplimiento y sin comercial: aqui solo hay        */
+/* volumen real de envios.                                               */
+/* ===================================================================== */
+const API_CUENTAS="/api/cuentas", API_BAJAS_CUENTAS="/api/bajas-cuentas";
+const CUENTAS_SHEET="12BtAIUjcW3bw_BcM3ZJ9Pv27HatgqipydpYqgqjYk-M", CUENTAS_GID="1275222205";
+const cuentasGvizURL=()=>`https://docs.google.com/spreadsheets/d/${CUENTAS_SHEET}/gviz/tq?tqx=out:csv&gid=${CUENTAS_GID}&t=${Date.now()}`;
+
+/* Estado inicial de bajas: refleja el estado del lead en HubSpot el 04/08/2026
+   (Baja, Inactivo y BAD_TIMING). Solo se usa si no hay nada guardado todavia;
+   a partir de ahi manda lo que se marque en el panel. */
+const BAJAS_CUENTAS_INICIAL=["1012","1373","17126","21166","30068","34080","34195","34217","34232","34292","34311","4314","4611","4677","4706","4714","50027","50102","50133","50135","50150","50151","50154","50160","50174","50191","50193","50213","50216","50223","50235","50244","50245","50249","50251","50253","50266","50269","50270","50273","50274","70009","70014","70031","70050","70080","70086","70093","70105","70116","70124","70125","70127","70128","70135","70138","70143","8124"];
+
+let CUENTAS=null, CUENTAS_ERR=null, CUENTAS_LOADING=false;
+let BAJAS2=new Set(), BAJAS2_SRC="local";
+
+const isBaja2=c=>BAJAS2.has(c.cod);
+
+/* ---------- lista de bajas propia (KV separado del de la Caja 1) ---------- */
+function loadBajas2Local(){
+  try{
+    const r=localStorage.getItem("impackta-bajas-cuentas");
+    if(r){BAJAS2=new Set(JSON.parse(r));return true}
+  }catch(e){}
+  BAJAS2=new Set(BAJAS_CUENTAS_INICIAL);   // primer arranque: el estado del CRM
+  return false;
+}
+function saveBajas2Local(){
+  try{localStorage.setItem("impackta-bajas-cuentas",JSON.stringify([...BAJAS2]))}catch(e){}
+}
+async function syncBajas2(){
+  try{
+    const r=await fetch(API_BAJAS_CUENTAS,{cache:"no-store"});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(Array.isArray(j.bajas)&&j.bajas.length){BAJAS2=new Set(j.bajas);BAJAS2_SRC="kv";saveBajas2Local()}
+    else if(Array.isArray(j.bajas)){
+      // KV vacio: subimos el estado inicial para que el equipo arranque igual
+      BAJAS2_SRC="kv";
+      await fetch(API_BAJAS_CUENTAS,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({op:"set",bajas:[...BAJAS2]})});
+    }
+    if(state.seccion==="cuentas")renderActive();
+  }catch(e){BAJAS2_SRC="local"}
+}
+async function toggleBaja2(cod){
+  if(BAJAS2.has(cod))BAJAS2.delete(cod); else BAJAS2.add(cod);
+  saveBajas2Local(); renderActive();
+  try{
+    const r=await fetch(API_BAJAS_CUENTAS,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:cod,op:"toggle"})});
+    if(r.ok){const j=await r.json();if(Array.isArray(j.bajas)){BAJAS2=new Set(j.bajas);BAJAS2_SRC="kv";saveBajas2Local();renderActive()}}
+  }catch(e){BAJAS2_SRC="local"}
+}
+
+/* ---------- parser + motor de calculo ---------- */
+/* La hoja es: COD.CLIENTE | CLIENTE | una columna por dia (dd/mm/yyyy).
+   Las celdas vacias son dias sin envio: NO son ceros que cuenten como dato,
+   por eso la ventana de cada cliente va de su primer envio al ultimo. Si se
+   contaran como dato, la media se hundiria arrastrando meses sin actividad. */
+function parseCuentas(txt){
+  const t=parseCSV(txt);
+  if(!t.length)throw new Error("hoja vacia");
+  const cab=t[0], dias=[];
+  for(let i=2;i<cab.length;i++){
+    const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(cab[i]||"").trim());
+    if(m)dias.push({i:i,date:new Date(+m[3],+m[2]-1,+m[1])});
+  }
+  if(!dias.length)throw new Error("no he reconocido ninguna columna de fecha");
+  const fechas=dias.map(d=>d.date), corte=fechas[fechas.length-1];
+  const lunes=d=>{const x=new Date(d);const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);x.setHours(0,0,0,0);return x};
+
+  const clients=[];
+  for(let r=1;r<t.length;r++){
+    const f=t[r];
+    if(!f||!String(f[0]||"").trim())continue;
+    const serie=dias.map(d=>{const v=String(f[d.i]==null?"":f[d.i]).trim();return (v&&/^-?\d+$/.test(v))?+v:0});
+    let a=-1,b=-1;
+    for(let k=0;k<serie.length;k++){if(serie[k]>0){if(a<0)a=k;b=k}}
+    const total=serie.reduce((s,v)=>s+v,0);
+    const c={cod:String(f[0]).trim(),name:String(f[1]||"").trim(),serie:serie,total:total,
+             ultimo:b>=0?fechas[b]:null,ultimoEnv:b>=0?serie[b]:0,
+             gap:b>=0?Math.round((corte-fechas[b])/864e5):null,
+             dias:b>=0?(b-a+1):0};
+    c.media=c.dias?+(total/c.dias).toFixed(2):0;
+    // semanas de la ventana de actividad
+    const wk=new Map();
+    for(let k=(a<0?0:a);k<=(b<0?-1:b);k++){
+      const key=+lunes(fechas[k]);
+      const o=wk.get(key)||{date:new Date(key),sum:0,n:0};
+      o.sum+=serie[k];o.n++;wk.set(key,o);
+    }
+    const weeks=[...wk.values()].sort((x,y)=>x.date-y.date);
+    c.weeks=weeks;
+    // solo semanas cerradas: una semana con menos de 4 dias de datos distorsiona
+    const cerr=(weeks.length&&weeks[weeks.length-1].n<4)?weeks.slice(0,-1):weeks;
+    const sums=cerr.map(w=>w.sum);
+    const A=sums.slice(-3), B=sums.length>=4?sums.slice(-6,-3):[];
+    const mA=A.length?A.reduce((s,v)=>s+v,0)/A.length:0;
+    const mB=B.length?B.reduce((s,v)=>s+v,0)/B.length:0;
+    const tv=!B.length?null:(mB===0?(mA>0?1:0):(mA-mB)/mB);
+    c.tendVal=tv;
+    c.tend=tv==null?"Estable":(tv>0.1?"Sube":(tv<-0.1?"Baja":"Estable"));
+    c.wow=(cerr.length>=2&&cerr[cerr.length-2].sum>0)
+      ? Math.round((cerr[cerr.length-1].sum-cerr[cerr.length-2].sum)/cerr[cerr.length-2].sum*100) : null;
+    clients.push(c);
+  }
+
+  // serie global por semana, sobre todos los dias del eje
+  const wg=new Map();
+  fechas.forEach((d,k)=>{
+    const key=+lunes(d);
+    const o=wg.get(key)||{date:new Date(key),sum:0,n:0};
+    o.n++; clients.forEach(c=>{o.sum+=c.serie[k]}); wg.set(key,o);
+  });
+  const gWeeks=[...wg.values()].sort((x,y)=>x.date-y.date);
+  const diasActivos=fechas.filter((d,k)=>clients.some(c=>c.serie[k]>0)).length;
+  return {clients:clients,fechas:fechas,corte:corte,gWeeks:gWeeks,diasActivos:diasActivos,
+          desde:fechas[0]};
+}
+
+async function loadCuentas(force){
+  if(CUENTAS_LOADING)return;
+  if(CUENTAS&&!force)return;
+  CUENTAS_LOADING=true;CUENTAS_ERR=null;
+  if(state.seccion==="cuentas")renderActive();
+  const fuentes=[API_CUENTAS,cuentasGvizURL()];
+  let ok=false;
+  for(const u of fuentes){
+    try{
+      const res=await fetch(u,{cache:"no-store"});
+      if(!res.ok)continue;
+      const txt=await res.text();
+      if(txt.trim().startsWith("<"))continue;
+      CUENTAS=parseCuentas(txt);ok=true;break;
+    }catch(e){CUENTAS_ERR=(e&&e.message)?e.message:String(e)}
+  }
+  if(!ok&&!CUENTAS_ERR)CUENTAS_ERR="no he podido leer la hoja de Cuentas Impackta";
+  CUENTAS_LOADING=false;
+  if(state.seccion==="cuentas")renderActive();
+}
+
+/* ---------- filtro comun de la seccion ---------- */
+function cuentasRows(){
+  if(!CUENTAS)return [];
+  let d=CUENTAS.clients.slice();
+  if(state.q){const q=state.q.toLowerCase();
+    d=d.filter(c=>c.name.toLowerCase().includes(q)||String(c.cod).toLowerCase().includes(q))}
+  return d;
+}
+const fmtFecha=d=>d?d.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit",year:"numeric"}):"—";
+/* La media diaria necesita decimales: 88 de estas cuentas mueven menos de 1 envio
+   al dia y redondeando a entero se verian todas como "0". */
+const fmtMedia=v=>{
+  if(v==null)return "—";
+  if(v>=100)return fmt(Math.round(v));
+  if(v>=10)return v.toFixed(1).replace(".",",");
+  if(v>0)return v.toFixed(2).replace(".",",");
+  return "0";
+};
+const tendTag=c=>c.tend==="Sube"?'<span class="tag green">Sube</span>'
+  :c.tend==="Baja"?'<span class="tag red">Baja</span>':'<span class="tag gray">Estable</span>';
+
+/* ---------- pestana 1: Resumen ---------- */
+function renderCuentasResumen(){
+  if(CUENTAS_LOADING||!CUENTAS)return cuentasPlaceholder();
+  const all=cuentasRows();
+  const act=all.filter(c=>!isBaja2(c));
+  const total=all.reduce((s,c)=>s+c.total,0);
+  const totalAct=act.reduce((s,c)=>s+c.total,0);
+  const mediaDia=CUENTAS.diasActivos?Math.round(total/CUENTAS.diasActivos):0;
+  const enviando=act.filter(c=>c.gap!=null&&c.gap<=4).length;
+  const top=all.slice().sort((a,b)=>b.total-a.total);
+  const top5=top.slice(0,5).reduce((s,c)=>s+c.total,0);
+  const conc=total?Math.round(top5/total*100):0;
+  const lider=top[0];
+  const concLider=total&&lider?Math.round(lider.total/total*100):0;
+  const parados=act.filter(c=>c.gap!=null&&c.gap>4);
+  const volParado=parados.reduce((s,c)=>s+c.media,0);
+  const bajando=act.filter(c=>c.tend==="Baja");
+
+  const kpis=[
+    {lab:"Envíos totales",val:fmt(total),sub:`${all.length} cuentas · ${fmt(totalAct)} de las activas`},
+    {lab:"Enviando esta semana",val:String(enviando),sub:`de ${act.length} cuentas activas`},
+    {lab:"Media de envíos/día",val:fmt(mediaDia),sub:`sobre ${CUENTAS.diasActivos} días con actividad`},
+    {lab:"Concentración top 5",val:conc+"%",sub:lider?`${esc(lider.name)} solo/a es el ${concLider}%`:"",
+     cls:conc>=60?"c-red":conc>=40?"c-amber":"",accent:true},
+  ];
+
+  const cabecera=`<div class="blk"><div class="blkhd">
+    <span class="eyebrow">Caja 2 · volumen real</span>
+    <h2>Cuentas Impackta</h2>
+    <span class="hint">Los clientes que facturan y no están en la hoja de clientes nuevos. Aquí no hay compromiso ni cumplimiento: solo volumen de envíos. Datos del <b>${fmtFecha(CUENTAS.desde)}</b> al <b>${fmtFecha(CUENTAS.corte)}</b>.</span>
+    </div><div class="kpis k4">${kpis.map(kpiCard).join("")}</div>`;
+
+  const grafico=`<div class="blk"><div class="blkhd"><h2>Envíos por semana</h2>
+    <span class="hint">Todas las cuentas de esta caja, incluidas las de baja.</span></div>
+    <div class="panel chart-pad">${cuentasChart(CUENTAS.gWeeks)}</div></div>`;
+
+  const topTbl=makeTable("cu_top",[
+    {k:"name",label:"Cuenta",defDir:1,val:c=>c.name,
+     cell:c=>`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.cod)}${isBaja2(c)?" · de baja":""}</div>`},
+    {k:"total",label:"Envíos",align:"r",val:c=>c.total,cell:c=>`<b>${fmt(c.total)}</b>`},
+    {k:"peso",label:"% del total",align:"r",val:c=>c.total,
+     cell:c=>total?(c.total/total*100).toFixed(1)+"%":"—"},
+    {k:"media",label:"Media/día",align:"r",val:c=>c.media,cell:c=>fmtMedia(c.media)},
+    {k:"tend",label:"Tendencia",val:c=>c.tendVal==null?-99:c.tendVal,cell:tendTag},
+    {k:"wow",label:"WoW",align:"r",val:c=>c.wow==null?null:c.wow,
+     cell:c=>c.wow==null?'<span class="tag gray">s/d</span>':`<b class="${c.wow>0?"c-green":c.wow<0?"c-red":""}">${pctSign(c.wow)}</b>`},
+    {k:"ultimo",label:"Último envío",align:"r",val:c=>c.ultimo?+c.ultimo:null,
+     cell:c=>`${fmtFecha(c.ultimo)}${c.gap>4?`<div style="font-size:11px;color:var(--muted)">hace ${c.gap} días</div>`:""}`},
+  ],top.slice(0,15),{def:{k:"total",dir:-1},rowClass:c=>isBaja2(c)?"isbaja":""});
+
+  const bloqueTop=`<div class="blk"><div class="blkhd"><h2>Top 15 por volumen</h2>
+    <span class="hint">La cartera completa está en la pestaña <b>Cuentas y bajas</b>.</span></div>
+    <div class="panel">${topTbl}</div></div>`;
+
+  let bloqueMov="";
+  if(parados.length||bajando.length){
+    const filas=parados.slice().sort((a,b)=>b.media-a.media).slice(0,10);
+    const t1=filas.length?makeTable("cu_par",[
+      {k:"name",label:"Cuenta",defDir:1,val:c=>c.name,
+       cell:c=>`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.cod)}</div>`},
+      {k:"total",label:"Envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
+      {k:"media",label:"Media/día",align:"r",val:c=>c.media,cell:c=>fmtMedia(c.media)},
+      {k:"ultimo",label:"Último envío",align:"r",val:c=>c.ultimo?+c.ultimo:null,cell:c=>fmtFecha(c.ultimo)},
+      {k:"gap",label:"Días sin enviar",align:"r",val:c=>c.gap,
+       cell:c=>`<b>${c.gap}</b>`},
+    ],filas,{def:{k:"media",dir:-1}}):"";
+    bloqueMov=`<div class="blk"><div class="blkhd"><h2>Sin envíos recientes</h2>
+      <span class="hint">Cuentas activas que llevan más de 4 días sin enviar, ordenadas por lo que movían al día. <b>Muchas trabajan por temporadas</b>, así que es contexto, no una alerta: ${parados.length} cuentas, ${fmt(Math.round(volParado))} envíos/día de media entre todas.</span></div>
+      <div class="panel">${t1}</div></div>`;
+  }
+
+  return cabecera+`</div>`+grafico+bloqueTop+bloqueMov;
+}
+
+/* ---------- pestana 2: Cuentas y bajas ---------- */
+function renderCuentasTabla(){
+  if(CUENTAS_LOADING||!CUENTAS)return cuentasPlaceholder();
+  const all=cuentasRows();
+  const f=state.cuentasFilter||"all";
+  const nB=all.filter(isBaja2).length, nA=all.length-nB;
+  let rows=all;
+  if(f==="act")rows=all.filter(c=>!isBaja2(c));
+  else if(f==="baja")rows=all.filter(isBaja2);
+
+  const head=`<div class="blk"><div class="blkhd">
+    <span class="eyebrow">Caja 2 · gestión</span><h2>Cuentas y bajas</h2>
+    <span class="hint">Misma mecánica que en Clientes nuevos, pero con <b>lista propia</b>: dar de baja aquí no afecta a la otra caja. Los de baja dejan de contar como activos y <b>siguen sumando en los totales</b>. Arranca con el estado del lead de HubSpot. ${BAJAS2_SRC==="kv"?'<b style="color:var(--green)">Compartido con el equipo.</b>':'<b style="color:var(--amber)">Guardado solo en este navegador.</b>'}</span>
+    </div>
+    <div class="filterbar" style="padding:0 0 14px"><div class="cfilter">
+      <button data-cufilter="all" aria-pressed="${f==="all"}">Todas (${all.length})</button>
+      <button data-cufilter="act" aria-pressed="${f==="act"}">Activas (${nA})</button>
+      <button data-cufilter="baja" aria-pressed="${f==="baja"}">De baja (${nB})</button>
+    </div></div>`;
+
+  const tbl=makeTable("cu_all",[
+    {k:"name",label:"Cuenta",defDir:1,val:c=>c.name,
+     cell:c=>`<div class="cn">${esc(c.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(c.cod)}</div>`},
+    {k:"total",label:"Envíos",align:"r",val:c=>c.total,cell:c=>fmt(c.total)},
+    {k:"media",label:"Media/día",align:"r",val:c=>c.media,cell:c=>fmtMedia(c.media)},
+    {k:"tend",label:"Tendencia",val:c=>c.tendVal==null?-99:c.tendVal,cell:tendTag},
+    {k:"wow",label:"WoW",align:"r",val:c=>c.wow==null?null:c.wow,
+     cell:c=>c.wow==null?'<span class="tag gray">s/d</span>':`<b class="${c.wow>0?"c-green":c.wow<0?"c-red":""}">${pctSign(c.wow)}</b>`},
+    {k:"ultimo",label:"Último envío",align:"r",val:c=>c.ultimo?+c.ultimo:null,cell:c=>fmtFecha(c.ultimo)},
+    {k:"gap",label:"Días sin enviar",align:"r",val:c=>c.gap,cell:c=>c.gap==null?"—":String(c.gap)},
+    {k:"estado",label:"Estado",val:c=>isBaja2(c)?1:0,
+     cell:c=>isBaja2(c)?'<span class="tag red">Baja</span>':'<span class="tag green">Activa</span>'},
+    {k:"accion",label:"",align:"r",sortable:false,val:()=>0,
+     cell:c=>`<button class="bajabtn${isBaja2(c)?" on":""}" data-toggle-cuenta="${esc(c.cod)}">${isBaja2(c)?"Reactivar":"Dar de baja"}</button>`},
+  ],rows,{def:{k:"total",dir:-1},rowClass:c=>isBaja2(c)?"isbaja":"",perPage:20});
+
+  // stickyacc deja el boton de baja fijo a la derecha, sin arrastrar la tabla
+  return head+`<div class="panel stickyacc">${tbl}</div></div>`;
+}
+
+/* ---------- estados de carga y error ---------- */
+function cuentasPlaceholder(){
+  if(CUENTAS_LOADING)return `<div class="blk"><div class="blkhd"><h2>Cuentas Impackta</h2></div>
+    <div class="panel"><div class="empty"><svg class="spin" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:8px"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>Leyendo la hoja de Cuentas Impackta…</div></div></div>`;
+  return `<div class="blk"><div class="blkhd"><h2>Cuentas Impackta</h2></div>
+    <div class="panel"><div class="empty"><b>No he podido cargar la hoja.</b><br>
+    <span style="font-size:12px">${esc(CUENTAS_ERR||"motivo desconocido")}</span><br><br>
+    <button class="primbtn" onclick="loadCuentas(true)">Reintentar</button></div></div></div>`;
+}
+
+/* ---------- sincronizacion con HubSpot (Caja 2) ---------- */
+/* Solo se manda lo que cambia a diario: volumen y evolucion.
+   NO se mandan gls_es_grupo / gls_num_empresas_grupo / gls_grupo_empresas: esos
+   ya estan bien en HubSpot desde el volcado historico, no cambian de un dia a
+   otro, y reenviarlos desde aqui solo abre la puerta a sobrescribirlos mal.
+   Tampoco compromiso ni cumplimiento: en esta caja no existen. */
+/* toISOString() convierte a UTC: con una fecha a medianoche local y España en
+   +2, el 03/08 se escribia como 2026-08-02. Se arma con los componentes locales. */
+function isoLocal(d){
+  if(!d)return "";
+  const m=d.getMonth()+1, x=d.getDate();
+  return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(x<10?"0":"")+x;
+}
+
+function buildCuentasSyncPayload(){
+  if(!CUENTAS)return[];
+  const out=[];
+  const ultimo=CUENTAS.corte;
+  const iu=CUENTAS.fechas.length-1;
+  CUENTAS.clients.forEach(function(c){
+    if(!c.cod)return;
+    if(!c.total)return;                     // sin un solo envio no hay nada que contar
+    /* Variacion del ultimo dia contra los 5 dias ANTERIORES CON ACTIVIDAD, no
+       contra los 5 naturales. Esta hoja tiene los 7 dias de la semana, asi que
+       incluir sabado y domingo (118 y 2 envios) disparaba a DOGFY a +229% cada
+       lunes. La Caja 1 no sufre esto porque su hoja solo tiene dias operativos:
+       ajustar el calculo es lo que hace que el KPI signifique lo mismo en las
+       dos cajas, no una incoherencia entre ellas. */
+    let m5=0,n5=0;
+    for(let k=iu-1;k>=0&&n5<5;k--){ if(c.serie[k]>0){m5+=c.serie[k];n5++} }
+    const media5=n5?m5/n5:0;
+    const envUlt=c.serie[iu]||0;
+    const var5=media5>0?Math.round((envUlt-media5)/media5*100):null;
+    out.push({
+      codigo:String(c.cod),
+      nombre:c.name,
+      properties:{
+        gls_envios_totales:String(c.total),
+        gls_envios_ultimo_dia:String(envUlt),
+        gls_media_envios_dia:String(c.media.toFixed(2)),
+        gls_tendencia:c.tend,
+        gls_dias_sin_envio:String(c.gap==null?0:c.gap),
+        gls_variacion_semanal_wow:c.wow==null?"":String(c.wow),
+        gls_variacion_vs_media_5d:var5==null?"":String(var5),
+        gls_fecha_ultimo_dia:isoLocal(ultimo)
+      }
+    });
+  });
+  return out;
+}
+
+async function cuentasSyncNow(){
+  const btn=document.getElementById("hs-sync");
+  if(!btn||btn.disabled)return;
+  if(!CUENTAS){alert("Todavia no se han cargado los datos de Cuentas Impackta.");return}
+  const payload=buildCuentasSyncPayload();
+  if(!payload.length){alert("No hay cuentas con envios que sincronizar.");return}
+  if(!confirm("Vas a actualizar "+payload.length+" cuentas en HubSpot con los datos hasta el "+
+              fmtFecha(CUENTAS.corte)+".\n\nSolo se tocan las fichas marcadas como "+
+              "\"Cliente antiguo\": las de Clientes nuevos no se ven afectadas.\n\n¿Sigo?"))return;
+  btn.disabled=true;
+  const etiqueta=btn.innerHTML;
+  btn.innerHTML="Sincronizando…";
+  try{
+    const r=await fetch(API_SYNC_HUBSPOT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({clients:payload,universo:"cuentas"})});
+    const j=await r.json();
+    if(typeof hsShowRes==="function")hsShowRes(j,payload.length);
+    else alert("Actualizadas: "+(j.updated||0)+" de "+payload.length+
+               (j.notFound&&j.notFound.length?("\nSin ficha en HubSpot: "+j.notFound.length):"")+
+               (j.errors&&j.errors.length?("\nErrores: "+j.errors.join(" · ")):""));
+  }catch(e){
+    alert("No he podido sincronizar: "+(e&&e.message?e.message:e));
+  }finally{
+    btn.disabled=false;btn.innerHTML=etiqueta;
+  }
+}
+
+/* ---------- grafico de barras por semana ---------- */
+function cuentasChart(weeks){
+  if(!weeks||!weeks.length)return '<div class="empty">Sin datos</div>';
+  const W=840,H=220,P={l:52,r:12,t:14,b:30};
+  const vals=weeks.map(w=>w.sum);
+  const max=Math.max.apply(null,vals.concat([1]))*1.12;
+  const n=weeks.length,bw=(W-P.l-P.r)/n;
+  const iy=v=>H-P.b-(v/max)*(H-P.t-P.b);
+  const yl=Array.from({length:5},(_,i)=>{const v=max/4*i;
+    return `<text x="${P.l-7}" y="${(iy(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--muted)">${fmt(Math.round(v))}</text>`+
+           `<line x1="${P.l}" y1="${iy(v).toFixed(1)}" x2="${W-P.r}" y2="${iy(v).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`}).join("");
+  const barras=weeks.map((w,k)=>{
+    const h=Math.max(0,H-P.b-iy(w.sum)),x=P.l+k*bw+bw*0.18,bwi=bw*0.64;
+    const et=w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"});
+    return `<rect x="${x.toFixed(1)}" y="${iy(w.sum).toFixed(1)}" width="${bwi.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--blue)" opacity=".82" data-tip="Semana del ${et}: ${fmt(w.sum)} envíos"/>`}).join("");
+  const cada=Math.max(1,Math.ceil(n/12));
+  const xl=weeks.map((w,k)=>k%cada?"":`<text x="${(P.l+k*bw+bw/2).toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="9" fill="var(--muted)">${w.date.toLocaleDateString("es-ES",{day:"2-digit",month:"2-digit"})}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Envíos por semana">${yl}${barras}${xl}</svg>`;
+}
+
 /* ===== EVENTS ===== */
+$("#sidenav").addEventListener("click",e=>{const b=e.target.closest("[data-sec]");if(b)irSeccion(b.dataset.sec)});
 $("#panels").addEventListener("click",e=>{
+  const cu=e.target.closest("[data-toggle-cuenta]");if(cu){toggleBaja2(cu.dataset.toggleCuenta);return}
+  const cuf=e.target.closest("[data-cufilter]");if(cuf){state.cuentasFilter=cuf.dataset.cufilter;state.tablePage={};renderActive();return}
+  const tpg=e.target.closest("[data-tpage]");if(tpg){const id=tpg.dataset.ptid;
+    state.tablePage[id]=(state.tablePage[id]||0)+Number(tpg.dataset.tpage);renderActive();return}
   const tg=e.target.closest("[data-toggle]");if(tg){toggleBaja(tg.dataset.toggle);return}const ng=e.target.closest("[data-toggle-nuevo]");if(ng){toggleNuevo(ng.dataset.toggleNuevo);return}
   const cf=e.target.closest("[data-cfilter]");if(cf){state.clientesFilter=cf.dataset.cfilter;renderActive();return}
    const sb=e.target.closest("[data-sel]");if(sb){const k=sb.dataset.sel;if(SEL[k])delete SEL[k];else SEL[k]=1;const n=Object.keys(SEL).filter(x=>SEL[x]).length;const tx=document.getElementById("agtxt"),bt=document.getElementById("agbtn");if(tx)tx.textContent=n?n+" cuenta"+(n>1?"s":"")+" seleccionada"+(n>1?"s":""):"Marca 2+ cuentas para agruparlas y medirlas como una sola";if(bt){bt.disabled=n<2;bt.textContent="Agrupar"+(n>=2?" ("+n+")":"");}return}
@@ -1121,20 +1644,32 @@ $("#panels").addEventListener("click",e=>{
   const th=e.target.closest("th[data-tid]");if(!th)return;
   const tid=th.dataset.tid,k=th.dataset.k,st=state.tableSort[tid];
   if(st&&st.k===k)st.dir*=-1;else state.tableSort[tid]={k,dir:+(th.dataset.dd||-1)};
+  state.tablePage[tid]=0;
   renderActive()});
 $("#tabbar").addEventListener("click",e=>{const t=e.target.closest(".tab");if(!t)return;state.tab=t.dataset.tab;renderTabs();renderActive();$$(".tab").forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===state.tab))});
 $("#comercialPills").addEventListener("click",e=>{const b=e.target.closest(".pill");if(!b)return;state.comercial=b.dataset.c;renderPills();renderActive();renderTabs()});
-$("#search").addEventListener("input",e=>{state.q=e.target.value;renderActive();renderTabs()});
-$("#refresh").addEventListener("click",loadLive);
+$("#search").addEventListener("input",e=>{state.q=e.target.value;state.tablePage={};renderActive();renderTabs()});
+$("#refresh").addEventListener("click",function(){
+  if(state.seccion==="cuentas"){
+    const b=$("#refresh"), ic=b.querySelector("svg");
+    b.disabled=true; if(ic)ic.classList.add("spin");
+    loadCuentas(true).then(function(){b.disabled=false; if(ic)ic.classList.remove("spin");});
+    return;
+  }
+  loadLive();
+});
 $("#banx").addEventListener("click",()=>$("#banner").classList.remove("show"));
 $("#theme").addEventListener("click",()=>{const cur=document.documentElement.getAttribute("data-theme");applyTheme(cur==="dark"?"light":"dark")});
 
 /* ===== INIT ===== */
 (function(){let th="light";try{th=localStorage.getItem("impackta-theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){}applyTheme(th)})();
-loadBajasLocal();loadNuevosLocal();
+loadBajasLocal();loadNuevosLocal();loadBajas2Local();
+try{const s=localStorage.getItem("impackta-seccion");
+  if(s==="cuentas"){state.seccion="cuentas";state.tab="cu_resumen"}}catch(e){}
 boot();
 loadLive();
-syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();syncFestivos();
+syncBajasFromKV();syncNuevosFromKV();syncGruposFromKV();syncFestivos();syncBajas2();
+if(state.seccion==="cuentas")loadCuentas();
 </script>
 <div id="ai-backdrop" onclick="aiClose()"></div>
 <aside id="ai-drawer" aria-label="Asistente del panel">
