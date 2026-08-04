@@ -378,6 +378,15 @@ export default {
       }
     }
 
-    return env.ASSETS.fetch(request);
+    // Los assets se servian sin Cache-Control, asi que Cloudflare y el navegador
+    // se quedaban con una version vieja del panel: se actualizaba el codigo y
+    // seguia viendose el anterior hasta forzar recarga. Con "no-cache" el
+    // navegador puede guardarlo, pero tiene que revalidar antes de usarlo.
+    const respuesta = await env.ASSETS.fetch(request);
+    const tipo = respuesta.headers.get("Content-Type") || "";
+    if (tipo.indexOf("text/html") === -1) return respuesta;
+    const conRevalidacion = new Response(respuesta.body, respuesta);
+    conRevalidacion.headers.set("Cache-Control", "no-cache, must-revalidate");
+    return conRevalidacion;
   },
 };
