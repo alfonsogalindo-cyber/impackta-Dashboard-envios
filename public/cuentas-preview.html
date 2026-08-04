@@ -261,8 +261,13 @@ tr.isgroup{background:var(--bg-2)}
 
 
   /* ===== NAVEGACION POR SECCIONES (Caja 1 / Caja 2) ===== */
-  .layout{display:flex;gap:24px;align-items:flex-start;padding-top:18px}
-  .sidenav{flex:0 0 214px;position:sticky;top:14px;display:flex;flex-direction:column;gap:4px}
+  /* El sidebar resta ~215px al area util y las 8 pestanas de Clientes nuevos
+     dejaban de caber ("Diagnostico" se cortaba). Ampliamos el contenedor lo
+     justo para recuperar ese ancho, aprovechando el hueco que sobraba a los
+     lados. Afecta tambien a la cabecera para que todo siga alineado. */
+  .wrap{max-width:1520px}
+  .layout{display:flex;gap:20px;align-items:flex-start;padding-top:18px}
+  .sidenav{flex:0 0 196px;position:sticky;top:14px;display:flex;flex-direction:column;gap:4px}
   .sidenav .sec-lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
     color:var(--faint);padding:0 12px 9px}
   .snav{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:11px 12px;
@@ -277,7 +282,13 @@ tr.isgroup{background:var(--bg-2)}
   /* min-width:0 es imprescindible: sin el, una tabla ancha desborda el flex item */
   .content{flex:1 1 auto;min-width:0}
   .content>.tabbar{position:sticky;top:0;z-index:20;margin-bottom:0;border-radius:0}
-  @media (max-width:900px){
+  /* Las 8 pestanas de Clientes nuevos necesitan 1023px con el padding original y
+     a 1280px de ventana solo quedaban 1016: se cortaba por 7px. Con 12px de
+     padding bajan a ~975 y entran con holgura. */
+  .content>.tabbar .tab{padding-left:12px;padding-right:12px}
+  /* Por debajo de 1200px el sidebar lateral se come el ancho que necesitan las
+     pestanas, asi que pasa arriba en horizontal y les deja el ancho completo. */
+  @media (max-width:1200px){
     .layout{display:block;padding-top:12px}
     .sidenav{position:static;flex-direction:row;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
     .sidenav::-webkit-scrollbar{display:none}
