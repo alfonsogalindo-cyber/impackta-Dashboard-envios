@@ -1748,20 +1748,27 @@ function buildTablaUnica(){
   /* Reparto por tramos, calculado aqui porque es la unica funcion que ve las dos
      carteras ya fusionadas: si se calculase solo sobre Caja 2, al preguntar por
      el reparto global la respuesta saldria corta sin que se notase. */
-  const TRAMOS=[[1,100,"1 a 99 envios"],[100,1000,"100 a 999"],[1000,10000,"1.000 a 9.999"],
-                [10000,100000,"10.000 a 99.999"],[100000,null,"100.000 o mas"]];
-  const cuenta=function(f,min,max){return f.total>=min&&(max==null||f.total<max)};
-  const reparto=TRAMOS.map(function(t){
-    const en=arr.filter(function(f){return cuenta(f,t[0],t[1])});
-    const por=function(k){return en.filter(function(f){return f.cartera===k}).length};
-    return t[2]+": "+en.length+" cuentas (Cuentas Impackta "+por("Cuentas Impackta")+
-      ", Clientes nuevos "+por("Clientes nuevos")+", en ambas carteras "+por("ambas")+")";
-  }).join(" ;; ")+" ;; sin ningun envio: "+arr.filter(function(f){return f.total===0}).length+" cuentas";
+  const TRAMOS=[[1,100,"1 a 99 envios"],[100,1000,"100 a 999 envios"],[1000,10000,"1.000 a 9.999 envios"],
+                [10000,100000,"10.000 a 99.999 envios"],[100000,null,"100.000 envios o mas"]];
+  /* Un solo numero por tramo y por bloque.
+     Primero se puso el total con el desglose por cartera entre parentesis, y el
+     modelo se quedaba con el numero del parentesis y tiraba el total, ademas de
+     decir que no tenia el dato de la otra cartera teniendolo delante. Con dos
+     listas planas, cada una con una sola cifra por tramo, responde bien. */
+  const repartoDe=function(filas){
+    return TRAMOS.map(function(t){
+      return t[2]+": "+filas.filter(function(f){
+        return f.total>=t[0]&&(t[1]==null||f.total<t[1])}).length+" cuentas";
+    }).join(" ;; ")+" ;; sin ningun envio todavia: "+
+      filas.filter(function(f){return f.total===0}).length+" cuentas";
+  };
+  const deCN=arr.filter(function(f){return f.cartera==="Clientes nuevos"||f.cartera==="ambas"});
 
   return {n:arr.length, arr:arr,
-    texto:"REPARTO POR TAMANYO, ya calculado sobre las "+arr.length+" cuentas de la tabla unica "+
-      "(cuantas cuentas hay en cada tramo de envios totales; usa estas cifras, no recuentes la tabla): "+
-      reparto+".\n\n"+
+    texto:"REPARTO POR TAMANYO DE TODAS LAS CUENTAS DEL PANEL, ya calculado sobre las "+arr.length+
+      " filas de la tabla unica (usa estas cifras tal cual, no recuentes la tabla): "+repartoDe(arr)+".\n"+
+      "REPARTO POR TAMANYO SOLO DE LA CARTERA 'Clientes nuevos' ("+deCN.length+
+      " cuentas, las captadas este anyo): "+repartoDe(deCN)+".\n\n"+
       "TABLA UNICA DE TODAS LAS CUENTAS ("+arr.length+" filas, ordenadas de MAS a MENOS envios "+
       "totales: las mayores arriba, las mas pequenyas en las ULTIMAS filas). "+
       "Columnas separadas por | en este orden: cartera|nombre|envios_totales|media_dia|tendencia|dias_sin_enviar|comercial|compromiso|cumplimiento|estado. "+
