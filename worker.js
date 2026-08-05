@@ -264,13 +264,35 @@ export default {
       if (!env.AI) return jsonRes({ error: "IA no disponible en la cuenta (falta binding AI)" }, 500);
       let body;
       try { body = await request.json(); } catch { return jsonRes({ error: "json invalido" }, 400); }
-      const pregunta = String(body.question || "").slice(0, 600);
-      const contexto = String(body.context || "").slice(0, 14000);
+      // Topes ampliados: el contexto ahora lleva las DOS carteras (la Caja 2 es
+      // el 97% del volumen) y 14.000 caracteres la cortaban por la mitad.
+      const pregunta = String(body.question || "").slice(0, 1500);
+      const contexto = String(body.context || "").slice(0, 60000);
+      const seccion = String(body.seccion || "").trim();
+      // Historial de la conversacion: sin el, un "y de ese cliente?" no tenia
+      // a que referirse. Se acotan turnos y longitud para no inflar la peticion.
+      const historial = Array.isArray(body.historial) ? body.historial.slice(-6) : [];
       if (!pregunta) return jsonRes({ error: "sin pregunta" }, 400);
       const NL = String.fromCharCode(10);
-      const system = "Eres el analista del panel comercial de Impackta, agencia oficial GLS. Respondes SIEMPRE en espanol, con tono profesional y claro para gerencia: ve al grano y explica lo importante, sin rollos ni tecnicismos. USA UNICAMENTE los datos del CONTEXTO. Si un dato no esta en el contexto, dilo claramente y NO lo inventes. Nunca inventes clientes ni cifras: usa los numeros tal cual aparecen. Se conciso pero completo. IMPORTANTE sobre los COMERCIALES: los nombres Judith, Noelia, Susana e Interno son los comerciales de Impackta (vendedores internos) propietarios de cada cuenta; NO son personas de contacto del cliente ni se les llama a ellos. Cuando recomiendes contactar o llamar a un cliente en riesgo, quien debe actuar es el COMERCIAL RESPONSABLE de esa cuenta (ej: Judith deberia llamar al cliente X). Nunca digas contactar a Judith o contactar a Noelia como si fueran el cliente.";
-      const user = "CONTEXTO (datos reales del panel, ahora mismo):" + NL + contexto + NL + NL + "PREGUNTA: " + pregunta;
-      const msgs = [ { role: "system", content: system }, { role: "user", content: user } ];
+      const system = "Eres el analista del panel comercial de Impackta, agencia oficial GLS. Respondes SIEMPRE en espanol, con tono profesional y claro para gerencia: ve al grano y explica lo importante, sin rollos ni tecnicismos. USA UNICAMENTE los datos del CONTEXTO. Si un dato no esta en el contexto, dilo claramente y NO lo inventes. Nunca inventes clientes ni cifras: usa los numeros tal cual aparecen. Se conciso pero completo."
+        + " HAY DOS CARTERAS y no se suman entre si: 'Clientes nuevos' son las ~60 cuentas captadas este anyo, las unicas con compromiso diario y cumplimiento; 'Cuentas Impackta' son las ~367 cuentas que concentran el volumen real de envios y NO tienen compromiso. Cuando hables de cumplimiento solo puede ser de Clientes nuevos. Cuando hablen de volumen o de los mayores clientes, lo relevante casi siempre esta en Cuentas Impackta. Di siempre de que cartera son los numeros que das."
+        + " IMPORTANTE sobre los COMERCIALES: los nombres Judith, Noelia, Susana e Interno son los comerciales de Impackta (vendedores internos) propietarios de cada cuenta; NO son personas de contacto del cliente ni se les llama a ellos. Cuando recomiendes contactar o llamar a un cliente en riesgo, quien debe actuar es el COMERCIAL RESPONSABLE de esa cuenta (ej: Judith deberia llamar al cliente X). Nunca digas contactar a Judith o contactar a Noelia como si fueran el cliente. Las cuentas de Cuentas Impackta no tienen comercial asignado en el panel: no te lo inventes."
+        + " Si la pregunta se refiere a algo que dijiste antes en la conversacion, usa ese hilo. Cuando des una cifra, acompanyala de la unidad y del periodo (por ejemplo 'envios/dia' o 'del 14/08/2025 al 04/08/2026'). No hagas alarmismo: que una cuenta lleve dias sin enviar puede ser normal porque muchos clientes trabajan por temporadas.";
+      const donde = seccion === "cuentas"
+        ? "El usuario esta mirando el panel de CUENTAS IMPACKTA (la cartera de volumen real). Si su pregunta no dice de que cartera habla, entiende que se refiere a esa."
+        : (seccion === "caja1"
+            ? "El usuario esta mirando el panel de CLIENTES NUEVOS (compromiso y cumplimiento). Si su pregunta no dice de que cartera habla, entiende que se refiere a esa, pero recuerda que el volumen grande esta en Cuentas Impackta y dilo si es relevante."
+            : "");
+      const user = (donde ? donde + NL + NL : "") +
+        "CONTEXTO (datos reales del panel, ahora mismo):" + NL + contexto + NL + NL +
+        "PREGUNTA: " + pregunta;
+      const msgs = [ { role: "system", content: system } ];
+      historial.forEach(function (m) {
+        const rol = (m && m.role === "assistant") ? "assistant" : "user";
+        const txt = String((m && m.content) || "").slice(0, 1200);
+        if (txt) msgs.push({ role: rol, content: txt });
+      });
+      msgs.push({ role: "user", content: user });
       const modelos = [
         "@cf/meta/llama-4-scout-17b-16e-instruct",
         "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
@@ -284,7 +306,8 @@ export default {
       const diag = [];
       for (const m of modelos) {
         try {
-          const ai = await env.AI.run(m, { messages: msgs, max_tokens: 600 });
+          // 600 cortaba cualquier analisis a media frase
+          const ai = await env.AI.run(m, { messages: msgs, max_tokens: 1500 });
           const answer = (ai && (ai.response || ai.result)) ? String(ai.response || ai.result).trim() : "";
           if (answer) { return jsonRes({ answer: answer, modelo: m }); }
           diag.push({ modelo: m, estado: "respuesta vacia" });
