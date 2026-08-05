@@ -1058,7 +1058,7 @@ function buildAIContext(pregunta){
     if(risk.length)L.push("CLIENTES EN RIESGO, ordenados de mayor a menor (indica que el comercial responsable debe llamarles y por que): "+risk.map(function(x){return x.c.name+" (comercial responsable: "+x.c.comercial+")"+(typeof motivoRiesgo==="function"?" ["+motivoRiesgo(x.c)+"]":"");}).join("; ")+".");
   }
   if(typeof GRUPOS!=="undefined"&&GRUPOS&&GRUPOS.length)L.push("GRUPOS de clientes activos: "+GRUPOS.map(function(g){return g.nombre+" ("+(g.miembros?g.miembros.length:0)+" empresas)";}).join("; ")+".");
-  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
+  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return "[Clientes nuevos] "+c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
   L.push("DETALLE DE LOS CLIENTES NUEVOS (formato nombre|comercial propietario|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
   // La Caja 2 es el 97% del volumen: sin esto el asistente responde sobre el 2,4%
   if(typeof buildContextoCuentas==="function"){
@@ -1717,18 +1717,33 @@ function buildContextoCuentas(){
   if(lider&&total)L.push("CONCENTRACION: las 5 mayores cuentas son el "+
     Math.round(top5/total*100)+"% del volumen; "+lider.name+" sola es el "+
     Math.round(lider.total/total*100)+"%. Es la mayor dependencia del negocio.");
-  L.push("TOP 15 CUENTAS POR VOLUMEN (nombre|envios totales|media dia|tendencia|dias sin enviar): "+
-    top.slice(0,15).map(function(c){return aiLimpio(c.name)+"|"+c.total+"|"+fmtMedia(c.media)+"|"+
+  L.push("TOP 15 CUENTAS POR VOLUMEN DE CUENTAS IMPACKTA (nombre|envios totales|media dia|tendencia|dias sin enviar): "+
+    top.slice(0,15).map(function(c){return "[Cuentas Impackta] "+aiLimpio(c.name)+"|"+c.total+"|"+fmtMedia(c.media)+"|"+
       c.tend+"|"+(c.gap==null?"s/d":c.gap)}).join(" ;; "));
+  /* La cola hacia falta: sin ella, al preguntar por las cuentas mas pequenyas el
+     modelo no tenia el dato y lo rellenaba con clientes de la Caja 1 etiquetados
+     como Caja 2. Un numero real con la cartera equivocada es peor que un "no lo se". */
+  // top va de mayor a menor: las 20 ultimas son las mas pequenyas, y un solo
+  // reverse las deja de menor a mayor, que es lo que anuncia la cabecera
+  const cola=top.filter(function(c){return c.total>0}).slice(-20).reverse();
+  if(cola.length)L.push("LAS "+cola.length+" CUENTAS MAS PEQUENYAS DE CUENTAS IMPACKTA, de menos a mas volumen (nombre|envios totales|media dia|ultimo envio): "+
+    cola.map(function(c){return "[Cuentas Impackta] "+aiLimpio(c.name)+"|"+c.total+"|"+
+      fmtMedia(c.media)+"|"+fmtFecha(c.ultimo)}).join(" ;; "));
+  /* Distribucion, para preguntas de reparto sin tener que mandar las 367 filas */
+  const tramo=function(min,max){return all.filter(function(c){return c.total>=min&&(max==null||c.total<max)}).length};
+  L.push("REPARTO POR TAMANYO EN CUENTAS IMPACKTA (cuantas cuentas hay en cada tramo de envios totales): "+
+    "1 a 99: "+tramo(1,100)+" ;; 100 a 999: "+tramo(100,1000)+" ;; 1.000 a 9.999: "+tramo(1000,10000)+
+    " ;; 10.000 a 99.999: "+tramo(10000,100000)+" ;; 100.000 o mas: "+tramo(100000,null)+
+    " ;; sin ningun envio: "+all.filter(function(c){return c.total===0}).length+".");
   if(bajando.length){
     const b=bajando.slice().sort(function(a,b){return b.media-a.media}).slice(0,10);
-    L.push("CUENTAS ACTIVAS CON TENDENCIA A LA BAJA, de mas a menos volumen (nombre|media dia|WoW): "+
-      b.map(function(c){return aiLimpio(c.name)+"|"+fmtMedia(c.media)+"|"+(c.wow==null?"s/d":c.wow+"%")}).join(" ;; "));
+    L.push("CUENTAS DE CUENTAS IMPACKTA ACTIVAS CON TENDENCIA A LA BAJA, de mas a menos volumen (nombre|media dia|WoW): "+
+      b.map(function(c){return "[Cuentas Impackta] "+aiLimpio(c.name)+"|"+fmtMedia(c.media)+"|"+(c.wow==null?"s/d":c.wow+"%")}).join(" ;; "));
   }
   if(parados.length){
     const p=parados.slice().sort(function(a,b){return b.media-a.media}).slice(0,10);
-    L.push("CUENTAS ACTIVAS SIN ENVIOS RECIENTES, de mas a menos volumen (nombre|media dia|ultimo envio|dias): "+
-      p.map(function(c){return aiLimpio(c.name)+"|"+fmtMedia(c.media)+"|"+fmtFecha(c.ultimo)+"|"+c.gap}).join(" ;; ")+
+    L.push("CUENTAS DE CUENTAS IMPACKTA ACTIVAS SIN ENVIOS RECIENTES, de mas a menos volumen (nombre|media dia|ultimo envio|dias): "+
+      p.map(function(c){return "[Cuentas Impackta] "+aiLimpio(c.name)+"|"+fmtMedia(c.media)+"|"+fmtFecha(c.ultimo)+"|"+c.gap}).join(" ;; ")+
       ". AVISO: muchas de estas cuentas trabajan por temporadas, asi que llevar dias sin enviar "+
       "NO significa necesariamente que haya un problema. No lo presentes como una alarma.");
   }
