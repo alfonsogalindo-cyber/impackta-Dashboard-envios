@@ -1006,16 +1006,35 @@ async function aiSend(preset){
   var inp=document.getElementById("ai-input");
   var q=(preset||(inp?inp.value:"")||"").trim(); if(!q)return;
   if(inp&&!preset)inp.value="";
+  // Sin esto, preguntar por la Caja 2 desde la Caja 1 no devolvia nada
+  if(typeof CUENTAS!=="undefined"&&!CUENTAS&&typeof loadCuentas==="function"){
+    AICHAT.push({role:"user",text:q}); AICHAT.push({role:"bot",text:"Leyendo los datos…"}); renderAIChat();
+    try{await loadCuentas()}catch(e){}
+    AICHAT.pop(); AICHAT.pop();
+  }
   AICHAT.push({role:"user",text:q}); AICHAT.push({role:"bot",text:"…"}); renderAIChat();
   try{
-    var ctx=buildAIContext();
-    var r=await fetch(API_ASK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,context:ctx})});
+    var ctx=buildAIContext(q);
+    // Historial: sin el, "y de ese cliente?" no significaba nada. 6 turnos es
+    // lo que Llama sigue sin perder el hilo ni inflar la peticion.
+    var hist=[];
+    var desde=0;
+    // arrancar en el primer turno del usuario: el saludo de bienvenida del
+    // asistente como historial solo hace que se vuelva a presentar
+    for(var k=0;k<AICHAT.length;k++){ if(AICHAT[k]&&AICHAT[k].role==="user"){desde=k;break} }
+    for(var i=Math.max(desde,AICHAT.length-14);i<AICHAT.length-2;i++){
+      var m=AICHAT[i];
+      if(!m||!m.text||m.text==="…")continue;
+      hist.push({role:m.role==="user"?"user":"assistant",content:String(m.text).slice(0,1200)});
+    }
+    hist=hist.slice(-6);
+    var r=await fetch(API_ASK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,context:ctx,historial:hist,seccion:state.seccion})});
     var j=await r.json();
     AICHAT[AICHAT.length-1].text=j.answer||("No pude responder: "+(j.error||"error desconocido"));
   }catch(e){ AICHAT[AICHAT.length-1].text="Error de conexión con la IA. Reinténtalo en un momento."; }
   renderAIChat();
 }
-function buildAIContext(){
+function buildAIContext(pregunta){
   if(!MODEL)return "";
   var d=fc(), ag=aggregate(d,MODEL.dates), weeks=ag.gWeeks, L=[];
   L.push("NOTA DE ROLES: 'comercial' es el vendedor de Impackta (Judith, Noelia, Susana o Interno) que gestiona y es PROPIETARIO de la cuenta, NO un contacto del cliente. Es quien debe hacer el seguimiento o llamar al cliente.");
@@ -1039,8 +1058,23 @@ function buildAIContext(){
     if(risk.length)L.push("CLIENTES EN RIESGO, ordenados de mayor a menor (indica que el comercial responsable debe llamarles y por que): "+risk.map(function(x){return x.c.name+" (comercial responsable: "+x.c.comercial+")"+(typeof motivoRiesgo==="function"?" ["+motivoRiesgo(x.c)+"]":"");}).join("; ")+".");
   }
   if(typeof GRUPOS!=="undefined"&&GRUPOS&&GRUPOS.length)L.push("GRUPOS de clientes activos: "+GRUPOS.map(function(g){return g.nombre+" ("+(g.miembros?g.miembros.length:0)+" empresas)";}).join("; ")+".");
-  var tbl=d.slice().sort(function(a,b){return b.total-a.total;}).map(function(c){return c.name+"|comercial:"+c.comercial+"|total="+c.total+"|cumplimiento="+(c.cumpl==null?"sin compromiso":c.cumpl+"%")+"|tendencia="+(c.tSym||"=")+"|dias_sin_envio="+c.gapEnd;}).join("\n");
-  L.push("DETALLE DE TODOS LOS CLIENTES (formato nombre|comercial propietario|total envios|cumplimiento|tendencia|dias sin enviar):\n"+tbl);
+  // el detalle por cuenta ya no se emite por cartera: lo sirve buildTablaUnica()
+  // La Caja 2 es el 97% del volumen: sin esto el asistente responde sobre el 2,4%
+  if(typeof buildContextoCuentas==="function"){
+    const c2=buildContextoCuentas();
+    if(c2)L.push(c2);
+  }
+  // UNA sola tabla para las dos carteras, con la cartera como primera columna:
+  // es el unico sitio del contexto donde hay cifras por cuenta
+  if(typeof buildTablaUnica==="function"){
+    const t=buildTablaUnica();
+    if(t&&t.n)L.push(t.texto);
+  }
+  // Ficha completa de las cuentas nombradas en la pregunta, esten o no en un top
+  if(pregunta&&typeof aiFichasMencionadas==="function"){
+    const fichas=aiFichasMencionadas(pregunta,6);
+    if(fichas.length)L.push("FICHAS DE LAS CUENTAS QUE MENCIONA LA PREGUNTA (usa estos numeros, son los exactos):\n"+fichas.join("\n"));
+  }
   return L.join("\n");
 }
 
@@ -1574,6 +1608,199 @@ function buildCuentasSyncPayload(){
   return out;
 }
 
+/* ===================================================================== */
+/* ===== CONTEXTO DEL ASISTENTE: CAJA 2 + BUSQUEDA DIRIGIDA =========== */
+/* El asistente solo veia los ~60 clientes del maestro, o sea el 2,4% de
+   los envios reales. Aqui se le da la Caja 2. No se manda la cartera
+   entera (367 filas serian ~30.000 caracteres y Llama razona peor cuanto
+   mas larga es la tabla): va un resumen, los mayores, los que se mueven,
+   y ADEMAS la ficha completa de cualquier cuenta que se nombre en la
+   pregunta — asi se puede preguntar por una cuenta pequenya que nunca
+   saldria en un top.                                                    */
+/* ===================================================================== */
+
+/* Normaliza para comparar: sin acentos, sin puntuacion, mayusculas. */
+const aiNorm=s=>String(s==null?"":s).toUpperCase()
+  .normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[^A-Z0-9 ]/g," ").replace(/\s+/g," ").trim();
+
+/* Palabras que aparecen en muchos nombres y darian falsos positivos. */
+const AI_PALABRAS_VACIAS=new Set(["GRUPO","ESPANA","ESPANOLA","IBERICA","INTERNACIONAL",
+  "DISTRIBUCIONES","DISTRIBUCIONS","COMERCIAL","SERVICIOS","PRODUCTOS","SOLUTIONS",
+  "TECHNICAL","CENTROS","EUROPE","GLOBAL","IMPACKTA","CLIENTE","IMPRESORA","TOTAL"]);
+
+function aiFichasMencionadas(pregunta,limite){
+  const q=" "+aiNorm(pregunta)+" ";
+  if(q.trim().length<3)return [];
+  const vistos={}, out=[];
+  const probar=function(nombre,linea){
+    if(out.length>=(limite||6))return;
+    const n=aiNorm(nombre);
+    if(!n||n.length<4)return;
+    let toca=(n.length>=5&&q.indexOf(" "+n+" ")>=0);
+    if(!toca){
+      const pal=n.split(" ").filter(function(p){return p.length>=5&&!AI_PALABRAS_VACIAS.has(p)});
+      for(let i=0;i<pal.length;i++){ if(q.indexOf(" "+pal[i]+" ")>=0){toca=true;break} }
+    }
+    if(!toca)return;
+    if(vistos[linea])return;
+    vistos[linea]=1; out.push(linea);
+  };
+  // Caja 2
+  if(CUENTAS)CUENTAS.clients.forEach(function(c){
+    probar(c.name,"[Cuentas Impackta] "+c.name+" (cod "+c.cod+"): "+fmt(c.total)+
+      " envios totales, media "+fmtMedia(c.media)+"/dia, tendencia "+c.tend+
+      ", ultimo envio "+fmtFecha(c.ultimo)+(c.gap!=null?" (hace "+c.gap+" dias)":"")+
+      ", WoW "+(c.wow==null?"s/d":c.wow+"%")+
+      ", estado "+(isBaja2(c)?"de baja":"activa"));
+  });
+  // Caja 1
+  if(typeof fcAll==="function")fcAll().forEach(function(c){
+    probar(c.name,"[Clientes nuevos] "+c.name+" (comercial "+c.comercial+"): "+
+      fmt(c.total)+" envios, compromiso "+(c.comp==null?"sin compromiso":c.comp+"/dia")+
+      ", cumplimiento "+(c.cumpl==null?"s/d":c.cumpl+"%")+
+      ", tendencia "+(c.tSym||"=")+", dias sin enviar "+c.gapEnd);
+  });
+  return out;
+}
+
+/* Hay cuentas cuyo nombre lleva una barra ("SORT 2000 | 24 segons") y la barra
+   es justo el separador de campos del contexto: el modelo leeria un campo de
+   mas. Se cambia por una barra inclinada solo para el texto que ve la IA. */
+const aiLimpio=s=>String(s==null?"":s).replace(/\|/g," / ").replace(/\s+/g," ").trim();
+
+/* UNA SOLA TABLA PARA LAS DOS CARTERAS.
+   Primero se probo con dos bloques separados y etiqueta por linea, y el modelo
+   seguia copiando filas de una cartera y presentandolas como de la otra: los
+   dos bloques tenian formatos distintos (Caja 1 en lineas, Caja 2 comprimida
+   con ";;") y siempre tiraba del facil de recorrer. Con una tabla unica la
+   cartera deja de ser un universo aparte y pasa a ser una columna mas, que es
+   algo que un modelo pequenyo si maneja bien.
+   Para los ~57 codigos que estan en las dos hojas se emite UNA fila marcada
+   "ambas": el volumen sale de Cuentas Impackta (ventana mas larga, es el dato
+   real) y el compromiso de Clientes nuevos, que es donde existe. */
+function buildTablaUnica(){
+  const norm=function(c){const s=String(c==null?"":c).trim();return s.replace(/^0+/,"")||s};
+  const filas=new Map();
+  if(CUENTAS)CUENTAS.clients.forEach(function(c){
+    filas.set(norm(c.cod),{cartera:"Cuentas Impackta",nombre:aiLimpio(c.name),
+      total:c.total,media:fmtMedia(c.media),tend:c.tend,
+      gap:(c.gap==null?"s/d":c.gap),comercial:"-",comp:"-",cumpl:"-",
+      baja:isBaja2(c)?"de baja":"activa"});
+  });
+  /* MODEL.clients y NO fcAll(): fcAll() devuelve la vista colapsada, con filas de
+     grupo que suman varios codigos que en Cuentas Impackta van sueltos (sumar la
+     columna daria de mas), y ademas viene filtrada por el comercial seleccionado,
+     asi que con un filtro puesto el asistente perderia clientes sin avisar.
+     La lista cruda es plana, sin filtrar y con un codigo por fila, que es lo que
+     permite cruzarla con Cuentas Impackta. */
+  const c1=(typeof MODEL!=="undefined"&&MODEL&&MODEL.clients)?MODEL.clients:[];
+  c1.forEach(function(c){
+    /* Alguna ficha trae el codigo vacio: sin clave por nombre colapsarian todas. */
+    const k=norm(c.cod)||("nombre:"+aiNorm(c.name));
+    const ya=filas.get(k);
+    const comp=(c.comp==null?"-":c.comp+"/dia");
+    const cumpl=(c.cumpl==null?"-":c.cumpl+"%");
+    if(ya){
+      ya.cartera="ambas";            // el volumen se queda el de Cuentas Impackta
+      ya.comercial=c.comercial||"-"; ya.comp=comp; ya.cumpl=cumpl;
+    }else{
+      filas.set(k,{cartera:"Clientes nuevos",nombre:aiLimpio(c.name),
+        total:c.total,media:(c.mediaDia!=null?fmtMedia(c.mediaDia):"-"),
+        tend:(c.tSym==="↑"?"Sube":c.tSym==="↓"?"Baja":"Estable"),
+        gap:(c.gapEnd==null?"s/d":c.gapEnd),
+        comercial:c.comercial||"-",comp:comp,cumpl:cumpl,
+        baja:(typeof isBaja==="function"&&isBaja(c))?"de baja":"activa"});
+    }
+  });
+  const arr=[...filas.values()].sort(function(a,b){return b.total-a.total});
+  const lineas=arr.map(function(f){
+    return f.cartera+"|"+f.nombre+"|"+f.total+"|"+f.media+"|"+f.tend+"|"+
+           f.gap+"|"+f.comercial+"|"+f.comp+"|"+f.cumpl+"|"+f.baja;
+  });
+  /* Reparto por tramos, calculado aqui porque es la unica funcion que ve las dos
+     carteras ya fusionadas: si se calculase solo sobre Caja 2, al preguntar por
+     el reparto global la respuesta saldria corta sin que se notase. */
+  const TRAMOS=[[1,100,"1 a 99 envios"],[100,1000,"100 a 999 envios"],[1000,10000,"1.000 a 9.999 envios"],
+                [10000,100000,"10.000 a 99.999 envios"],[100000,null,"100.000 envios o mas"]];
+  /* Un solo numero por tramo y por bloque.
+     Primero se puso el total con el desglose por cartera entre parentesis, y el
+     modelo se quedaba con el numero del parentesis y tiraba el total, ademas de
+     decir que no tenia el dato de la otra cartera teniendolo delante. Con dos
+     listas planas, cada una con una sola cifra por tramo, responde bien. */
+  const repartoDe=function(filas){
+    return TRAMOS.map(function(t){
+      return t[2]+": "+filas.filter(function(f){
+        return f.total>=t[0]&&(t[1]==null||f.total<t[1])}).length+" cuentas";
+    }).join(" ;; ")+" ;; sin ningun envio todavia: "+
+      filas.filter(function(f){return f.total===0}).length+" cuentas";
+  };
+  const deCN=arr.filter(function(f){return f.cartera==="Clientes nuevos"||f.cartera==="ambas"});
+
+  return {n:arr.length, arr:arr,
+    texto:"REPARTO POR TAMANYO DE TODAS LAS CUENTAS DEL PANEL, ya calculado sobre las "+arr.length+
+      " filas de la tabla unica (usa estas cifras tal cual, no recuentes la tabla): "+repartoDe(arr)+".\n"+
+      "REPARTO POR TAMANYO SOLO DE LA CARTERA 'Clientes nuevos' ("+deCN.length+
+      " cuentas, las captadas este anyo): "+repartoDe(deCN)+".\n\n"+
+      "TABLA UNICA DE TODAS LAS CUENTAS ("+arr.length+" filas, ordenadas de MAS a MENOS envios "+
+      "totales: las mayores arriba, las mas pequenyas en las ULTIMAS filas). "+
+      "Columnas separadas por | en este orden: cartera|nombre|envios_totales|media_dia|tendencia|dias_sin_enviar|comercial|compromiso|cumplimiento|estado. "+
+      "La PRIMERA columna es la cartera y es la unica fuente valida para decir a que cartera pertenece una cuenta. "+
+      "'ambas' significa que esa cuenta esta en las dos. Un '-' significa que ese dato no aplica a esa cartera.\n"+
+      lineas.join("\n")};
+}
+
+function buildContextoCuentas(){
+  if(!CUENTAS)return "";
+  const L=[];
+  const all=CUENTAS.clients;
+  const act=all.filter(function(c){return !isBaja2(c)});
+  const total=all.reduce(function(a,c){return a+c.total},0);
+  const top=all.slice().sort(function(a,b){return b.total-a.total});
+  const top5=top.slice(0,5).reduce(function(a,c){return a+c.total},0);
+  const lider=top[0];
+  const enviando=act.filter(function(c){return c.gap!=null&&c.gap<=4}).length;
+  const parados=act.filter(function(c){return c.gap!=null&&c.gap>4});
+  const bajando=act.filter(function(c){return c.tend==="Baja"});
+
+  L.push("=== CAJA 2 · CUENTAS IMPACKTA (el volumen real de la operacion) ===");
+  L.push("IMPORTANTE: el panel tiene DOS carteras distintas y no se suman entre si. "+
+    "1) 'Clientes nuevos' son las ~60 cuentas captadas este anyo, las unicas que tienen "+
+    "compromiso diario firmado y cumplimiento. 2) 'Cuentas Impackta' son las "+all.length+
+    " cuentas que facturan de verdad, sin compromiso asociado. La mayor parte del volumen "+
+    "de Impackta esta en Cuentas Impackta, no en Clientes nuevos.");
+  L.push("RESUMEN CUENTAS IMPACKTA: "+fmt(total)+" envios totales del "+fmtFecha(CUENTAS.desde)+
+    " al "+fmtFecha(CUENTAS.corte)+"; "+all.length+" cuentas ("+act.length+" activas, "+
+    (all.length-act.length)+" de baja); "+enviando+" han enviado en los ultimos 4 dias; "+
+    "media global "+fmt(CUENTAS.diasActivos?Math.round(total/CUENTAS.diasActivos):0)+" envios/dia.");
+  if(lider&&total)L.push("CONCENTRACION: las 5 mayores cuentas son el "+
+    Math.round(top5/total*100)+"% del volumen; "+lider.name+" sola es el "+
+    Math.round(lider.total/total*100)+"%. Es la mayor dependencia del negocio.");
+  /* NADA DE CIFRAS POR CUENTA EN ESTE BLOQUE.
+     Los rankings por cuenta (mayores, menores, en caida, paradas) salian aqui
+     con sus numeros, y al haber dos bloques con formatos distintos el modelo
+     mezclaba filas entre carteras. Ahora todas las cifras por cuenta viven en
+     un solo sitio, buildTablaUnica(), y aqui solo quedan agregados y listas de
+     NOMBRES: sin numeros que copiar no hay numero que atribuir mal. */
+  /* El reparto por tramos lo emite buildTablaUnica(), que ve las dos carteras
+     fusionadas: aqui saldria solo el de Caja 2 y una pregunta global se
+     responderia corta sin que se notase. */
+  /* Listas de NOMBRES, sin cifras: senyalan a que filas de la tabla mirar.
+     Se ordenan por volumen para que los primeros nombres sean los que importan. */
+  const soloNombres=function(arr){return arr.slice().sort(function(a,b){return b.media-a.media})
+    .slice(0,12).map(function(c){return aiLimpio(c.name)}).join(" ;; ")};
+  if(bajando.length)L.push("CUENTAS DE LA CARTERA 'Cuentas Impackta' ACTIVAS Y CON TENDENCIA A LA BAJA ("+
+    bajando.length+" en total), de mas a menos volumen. Sus cifras estan en la tabla unica, "+
+    "buscalas por nombre: "+soloNombres(bajando)+".");
+  if(parados.length)L.push("CUENTAS DE LA CARTERA 'Cuentas Impackta' ACTIVAS Y SIN ENVIOS RECIENTES ("+
+    parados.length+" en total, mas de 4 dias sin enviar), de mas a menos volumen. Sus cifras estan "+
+    "en la tabla unica: "+soloNombres(parados)+
+    ". AVISO: muchas de estas cuentas trabajan por temporadas, asi que llevar dias sin enviar "+
+    "NO significa necesariamente que haya un problema. No lo presentes como una alarma.");
+  return L.join("\n");
+}
+
+
 async function cuentasSyncNow(){
   const btn=document.getElementById("hs-sync");
   if(!btn||btn.disabled)return;
@@ -1623,6 +1850,13 @@ function cuentasChart(weeks){
 
 /* ===== EVENTS ===== */
 $("#sidenav").addEventListener("click",e=>{const b=e.target.closest("[data-sec]");if(b)irSeccion(b.dataset.sec)});
+const _aiOpenOrig=(typeof aiOpen==="function")?aiOpen:null;
+if(_aiOpenOrig){
+  window.aiOpen=function(){
+    _aiOpenOrig.apply(null,arguments);
+    if(typeof CUENTAS!=="undefined"&&!CUENTAS&&typeof loadCuentas==="function")loadCuentas();
+  };
+}
 $("#panels").addEventListener("click",e=>{
   const cu=e.target.closest("[data-toggle-cuenta]");if(cu){toggleBaja2(cu.dataset.toggleCuenta);return}
   const cuf=e.target.closest("[data-cufilter]");if(cuf){state.cuentasFilter=cuf.dataset.cufilter;state.tablePage={};renderActive();return}
@@ -1677,6 +1911,9 @@ if(state.seccion==="cuentas")loadCuentas();
   <div class="ai-suggest">
     <button onclick="aiSend('¿Por qué se movió el volumen esta semana?')">¿Por qué se movió el volumen?</button>
     <button onclick="aiSend('¿A quién debería llamar? (clientes en riesgo)')">¿A quién llamar?</button>
+    <button onclick="aiSend('¿Cuáles son mis 10 mayores cuentas por volumen de envíos y cuánto pesa cada una sobre el total?')">Mis mayores cuentas</button>
+    <button onclick="aiSend('¿Qué cuentas con volumen importante están bajando y cuánto representan al día?')">Cuentas que bajan</button>
+    <button onclick="aiSend('¿Qué concentración de riesgo tengo? ¿De cuántos clientes depende mi facturación?')">Concentración de riesgo</button>
     <button onclick="aiSend('Resúmeme la semana para gerencia')">Resumen de la semana</button>
   </div>
   <div id="ai-msgs" class="ai-msgs"></div>
