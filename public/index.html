@@ -890,7 +890,34 @@ function diagWeeklyChart(weeks,fw,sel){
 }
 function diagDailyChart(dayIdx,perDay,dates,selDay,ym,months){
   const idx=months.indexOf(ym);
-  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button></div>';
+  /* Total del mes que se esta viendo, y variacion contra el mes anterior.
+     Antes habia que ir sumando las barras a ojo para saber como iba el mes.
+     Se suma desde perDay por clave anyo*12+mes, no por getMonth() solo, para
+     que no se mezclen dos anyos cuando la hoja pase de diciembre a enero. */
+  const diasDe=function(clave){const o=[];for(let i=0;i<dates.length;i++){
+    if(dates[i].getFullYear()*12+dates[i].getMonth()===clave)o.push(i);}return o;};
+  const suma=function(idxs){let s=0;for(let i=0;i<idxs.length;i++)s+=perDay[idxs[i]];return s;};
+  const totMes=suma(dayIdx);
+  /* "En curso" es el mes natural en el que estamos hoy, no simplemente el
+     ultimo con datos: el 1 de octubre, septiembre ya esta cerrado y marcarlo
+     como en curso seria mentir sobre un mes completo. */
+  const hoy=new Date();
+  const enCurso=(ym===hoy.getFullYear()*12+hoy.getMonth());
+  const ymPrev=idx>0?months[idx-1]:null;
+  let totPrev=0,sufijo="";
+  if(ymPrev!=null){
+    const idxPrev=diasDe(ymPrev);
+    /* Si el mes va a medias se compara contra los MISMOS dias operativos del
+       anterior. Compararlo contra el mes entero daria siempre una caida falsa
+       -el dia 3 de mes "cae" un 85%- y eso asusta sin motivo. */
+    totPrev=enCurso?suma(idxPrev.slice(0,dayIdx.length)):suma(idxPrev);
+    if(enCurso&&idxPrev.length>dayIdx.length)sufijo=" (mismos "+dayIdx.length+" días)";
+  }
+  const difPct=totPrev>0?Math.round((totMes-totPrev)/totPrev*100):null;
+  const chip=difPct==null?"":'<span class="tag '+(difPct>=0?"green":"red")+'">'+(difPct>0?"+":"")+difPct+'% vs '+monthLabel(ymPrev).split(" ")[0]+sufijo+'</span>';
+  const avisoParcial=enCurso?'<span class="tag amber">mes en curso</span>':"";
+  const nav='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap"><button class="bajabtn" data-month="prev"'+(idx<=0?" disabled":"")+'>‹</button><span style="font-size:12.5px;font-weight:600;min-width:130px;text-align:center">'+monthLabel(ym)+'</span><button class="bajabtn" data-month="next"'+(idx>=months.length-1?" disabled":"")+'>›</button>'
+    +'<span style="font-size:13px;font-weight:700;margin-left:6px">'+fmt(totMes)+'</span><span style="font-size:11.5px;color:var(--muted)">envíos en el mes · '+dayIdx.length+' días op.</span>'+chip+avisoParcial+'</div>';
   if(!dayIdx.length)return nav+'<div class="empty">Sin días operativos este mes.</div>';
   const W=840,H=210,P={l:42,r:14,t:14,b:26};
   const vals=dayIdx.map(j=>perDay[j]),max=Math.max.apply(null,vals.concat([1]))*1.14,n=dayIdx.length,bw=(W-P.l-P.r)/n;
