@@ -480,7 +480,46 @@ const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let BAJAS=new Set(), BAJAS_SRC="local";let NUEVOS=new Set(), NUEVOS_SRC="local";let GRUPOS=[], GRUPOS_SRC="local";let SEL={};let FESTIVOS=[];   // "kv" si las lee del backend compartido
 const keyOf=c=>c.cod||c.name;
 const isBaja=c=>BAJAS.has(keyOf(c));const isNuevo=c=>NUEVOS.has(keyOf(c));
-function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}catch(e){NUEVOS_SRC="local"}}
+function saveLocal(){try{localStorage.setItem("impackta-bajas",JSON.stringify([...BAJAS]))}catch(e){}}function saveNuevosLocal(){try{localStorage.setItem("impackta-nuevos",JSON.stringify([...NUEVOS]))}catch(e){}}function loadNuevosLocal(){try{const r=localStorage.getItem("impackta-nuevos");if(r)NUEVOS=new Set(JSON.parse(r))}catch(e){}}
+/* Un cliente deja de ser "nuevo" en cuanto registra su primer envio.
+   Esta poda estaba escrita en un solo sitio (al cargar los datos) y solo
+   afectaba a memoria y localStorage, lo que dejaba DOS problemas:
+   1. El KV conservaba para siempre claves ya caducadas, asi que quien leyera
+      esa lista por fuera del panel se llevaba un dato enganyoso.
+   2. syncNuevosFromKV() sobrescribe NUEVOS con lo que haya en el KV, y compite
+      con la carga de la hoja. Si la respuesta del KV llegaba la ultima, volvia
+      a meter las claves caducadas y dejaba fuera de TODAS las metricas a
+      clientes que si facturan. El total del mes podia cambiar entre recargas.
+   Por eso ahora la poda es una funcion propia que se aplica en los dos sitios
+   y se persiste. */
+function podarNuevos(){
+  if(!MODEL||!NUEVOS.size)return [];
+  const fuera=[];
+  MODEL.clients.forEach(c=>{const k=keyOf(c);if(c.total>0&&NUEVOS.has(k)){NUEVOS.delete(k);fuera.push(k);}});
+  return fuera;
+}
+/* Persiste la poda en el KV. Relee antes de escribir para no pisar un alta que
+   otro usuario acabe de hacer, y si algo falla no pasa nada: la poda en memoria
+   ya ha surtido efecto y se reintentara en la siguiente carga. */
+async function depurarNuevosKV(podados){
+  if(!podados||!podados.length)return;
+  try{
+    const r=await fetch(API_NUEVOS,{cache:"no-store"});
+    if(!r.ok)return;
+    const j=await r.json();
+    const actual=Array.isArray(j.nuevos)?j.nuevos.map(String):[];
+    const fuera=new Set(podados.map(String));
+    const limpia=actual.filter(k=>!fuera.has(k));
+    if(limpia.length===actual.length)return;   // el KV ya estaba limpio
+    const w=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({op:"set",nuevos:limpia})});
+    if(w.ok){const jj=await w.json();NUEVOS=new Set(jj.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();}
+  }catch(e){}
+}async function toggleNuevo(k){if(NUEVOS.has(k))NUEVOS.delete(k);else NUEVOS.add(k);saveNuevosLocal();renderAll();try{const r=await fetch(API_NUEVOS,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,op:"toggle"})});if(r.ok){const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";saveNuevosLocal();renderAll();}}catch(e){}}async function syncNuevosFromKV(){try{const r=await fetch(API_NUEVOS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();NUEVOS=new Set(j.nuevos||[]);NUEVOS_SRC="kv";
+  /* Si la hoja ya estaba cargada hay que volver a podar: la lista del KV puede
+     traer claves de clientes que entretanto ya facturan, y sin esto volverian a
+     quedar excluidos de las metricas. */
+  const podados=podarNuevos();saveNuevosLocal();renderAll();if(podados.length)depurarNuevosKV(podados);}catch(e){NUEVOS_SRC="local"}}
 function loadBajasLocal(){try{const r=localStorage.getItem("impackta-bajas");if(r)BAJAS=new Set(JSON.parse(r))}catch(e){}}
 async function syncBajasFromKV(){   // intenta leer la lista compartida; si no hay backend, se queda en local
   try{const r=await fetch(API_BAJAS,{cache:"no-store"});if(!r.ok)throw 0;const j=await r.json();
@@ -1284,7 +1323,7 @@ async function loadLive(){const btn=$("#refresh");btn.disabled=true;btn.querySel
   for(const u of sources){
     try{const res=await fetch(u,{cache:"no-store"});if(!res.ok)continue;const txt=await res.text();
       if(txt.trim().startsWith("<"))continue;const m=transform(parseCSV(txt));if(!m.clients.length)continue;
-      MODEL=m;MODEL.clients.forEach(c=>{if(c.total>0&&NUEVOS.has(keyOf(c))){NUEVOS.delete(keyOf(c));saveNuevosLocal();}});SRC="live";UPDATED=new Date();renderAll();setMeta();
+      MODEL=m;const podados=podarNuevos();if(podados.length){saveNuevosLocal();depurarNuevosKV(podados);}SRC="live";UPDATED=new Date();renderAll();setMeta();
       banner("ok",`<b>Conectado.</b> ${m.clients.length} clientes leídos en vivo desde el Sheet (hoja 2026).`);
       setTimeout(()=>$("#banner").classList.remove("show"),4200);ok=true;break;
     }catch(e){/* siguiente fuente */}
